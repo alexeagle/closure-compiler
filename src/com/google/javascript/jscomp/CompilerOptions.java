@@ -2296,6 +2296,12 @@ public class CompilerOptions implements Serializable, Cloneable {
     ECMASCRIPT6_STRICT,
 
     /**
+     * A superset of ES6 which adds Typescript-style type
+     * declarations, introspection, and annotations
+     */
+    ATSCRIPT,
+
+    /**
      * For languageOut only. The same language mode as the input.
      */
     NO_TRANSPILE;
@@ -2347,6 +2353,8 @@ public class CompilerOptions implements Serializable, Cloneable {
         case "ECMASCRIPT3":
         case "ES3":
           return LanguageMode.ECMASCRIPT3;
+        case "ATSCRIPT":
+          return LanguageMode.ATSCRIPT;
       }
       return null;
     }

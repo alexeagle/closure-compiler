@@ -677,12 +677,8 @@ public final class CodePrinter {
             options.lineLengthThreshold,
             createSourceMap,
             options.sourceMapDetailLevel);
-    // AE: here
     CodeGenerator cg =
-        //outputFormat == Format.TYPESCRIPT
-    //        ? new TypescriptCodeGenerator(mcp, options, registry)
-      //      :
-    outputFormat == Format.TYPED
+        outputFormat == Format.TYPED
             ? new TypedCodeGenerator(mcp, options, registry)
             : new CodeGenerator(mcp, options);
 

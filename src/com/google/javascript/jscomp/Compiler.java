@@ -1873,7 +1873,6 @@ public class Compiler extends AbstractCompiler {
    */
   private String toSource(Node n, SourceMap sourceMap, boolean firstOutput) {
     CodePrinter.Builder builder = new CodePrinter.Builder(n);
-    builder.setTypeRegistry(this.typeRegistry);
     builder.setCompilerOptions(options);
     builder.setSourceMap(sourceMap);
     builder.setTagAsStrict(firstOutput && options.getLanguageOut().isStrict());
