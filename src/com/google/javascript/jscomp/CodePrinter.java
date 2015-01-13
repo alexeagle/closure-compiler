@@ -637,13 +637,7 @@ public final class CodePrinter {
             "Cannot build without root node being specified");
       }
 
-      Format outputFormat = outputTypes
-          ? Format.TYPED
-          : options.prettyPrint
-              ? Format.PRETTY
-              : Format.COMPACT;
-
-      return toSource(root, outputFormat, options, registry,
+      return toSource(root, Format.fromOptions(options, outputTypes), options, registry,
           sourceMap, tagAsStrict);
     }
   }
@@ -651,7 +645,15 @@ public final class CodePrinter {
   enum Format {
     COMPACT,
     PRETTY,
-    TYPED
+    TYPED,
+    TYPESCRIPT;
+
+    static Format fromOptions(CompilerOptions options, boolean outputTypes) {
+      if (options.getLanguageOut() == CompilerOptions.LanguageMode.ATSCRIPT) return Format.TYPESCRIPT;
+      if (outputTypes) return Format.TYPED;
+      if (options.prettyPrint) return Format.PRETTY;
+      return Format.COMPACT;
+    }
   }
 
   /**
@@ -675,10 +677,14 @@ public final class CodePrinter {
             options.lineLengthThreshold,
             createSourceMap,
             options.sourceMapDetailLevel);
+    // AE: here
     CodeGenerator cg =
-        outputFormat == Format.TYPED
-        ? new TypedCodeGenerator(mcp, options, registry)
-        : new CodeGenerator(mcp, options);
+        //outputFormat == Format.TYPESCRIPT
+    //        ? new TypescriptCodeGenerator(mcp, options, registry)
+      //      :
+    outputFormat == Format.TYPED
+            ? new TypedCodeGenerator(mcp, options, registry)
+            : new CodeGenerator(mcp, options);
 
     if (tagAsStrict) {
       cg.tagAsStrict();

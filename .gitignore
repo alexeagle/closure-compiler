@@ -4,3 +4,7 @@ junit*.properties
 target/
 *~
 .settings
+out/*
+.idea/*
+
+*.iml

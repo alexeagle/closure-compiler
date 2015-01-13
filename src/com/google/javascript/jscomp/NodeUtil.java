@@ -2961,6 +2961,43 @@ public final class NodeUtil {
   }
 
   /**
+   * Determines whether this node is testing for the existence of a property.
+   * If true, we will not emit warnings about a missing property.
+   *
+   * @param propAccess The GETPROP or GETELEM being tested.
+   */
+  static boolean isPropertyTest(AbstractCompiler compiler, Node propAccess) {
+    Node parent = propAccess.getParent();
+    switch (parent.getType()) {
+      case Token.CALL:
+        return parent.getFirstChild() != propAccess
+            && compiler.getCodingConvention().isPropertyTestFunction(parent);
+
+      case Token.IF:
+      case Token.WHILE:
+      case Token.DO:
+      case Token.FOR:
+        return NodeUtil.getConditionExpression(parent) == propAccess;
+
+      case Token.INSTANCEOF:
+      case Token.TYPEOF:
+        return true;
+
+      case Token.AND:
+      case Token.HOOK:
+        return parent.getFirstChild() == propAccess;
+
+      case Token.NOT:
+        return parent.getParent().isOr()
+            && parent.getParent().getFirstChild() == parent;
+
+      case Token.CAST:
+        return isPropertyTest(compiler, parent);
+    }
+    return false;
+  }
+
+  /**
    * @return The class name part of a qualified prototype name.
    */
   static Node getPrototypeClassName(Node qName) {
@@ -3543,6 +3580,7 @@ public final class NodeUtil {
   }
 
   /** Find the best JSDoc for the given node. */
+  @Nullable
   public static JSDocInfo getBestJSDocInfo(Node n) {
     JSDocInfo info = n.getJSDocInfo();
     if (info == null) {
@@ -3558,7 +3596,8 @@ public final class NodeUtil {
       } else if (isObjectLitKey(parent)) {
         return parent.getJSDocInfo();
       } else if (parent.isFunction()) {
-        return parent.getJSDocInfo();
+        // FUNCTION may be inside ASSIGN
+        return getBestJSDocInfo(parent);
       } else if (parent.isVar() && parent.hasOneChild()) {
         return parent.getJSDocInfo();
       } else if ((parent.isHook() && parent.getFirstChild() != n) ||

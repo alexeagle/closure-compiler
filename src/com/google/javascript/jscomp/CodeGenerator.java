@@ -21,9 +21,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.javascript.jscomp.CompilerOptions.LanguageMode;
-import com.google.javascript.rhino.Node;
-import com.google.javascript.rhino.Token;
-import com.google.javascript.rhino.TokenStream;
+import com.google.javascript.rhino.*;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -54,6 +52,12 @@ class CodeGenerator {
   private final boolean preserveTypeAnnotations;
   private final boolean trustedStrings;
   private final LanguageMode languageMode;
+
+  // FIXME(alexeagle):
+  // This is used to track the context of a function declaration
+  // for languageMode=ATSCRIPT
+  // and could probably be done a better way.
+  private JSDocInfo jsDocInfoToPrintParameterTypes;
 
   private CodeGenerator(CodeConsumer consumer) {
     cc = consumer;
@@ -230,6 +234,13 @@ class CodeGenerator {
       case Token.NAME:
         if (first == null || first.isEmpty()) {
           addIdentifier(n.getString());
+          if (languageMode == LanguageMode.ATSCRIPT) {
+            JSDocInfo jsDocInfo = NodeUtil.getBestJSDocInfo(n);
+            if (jsDocInfo != null && jsDocInfo.getType() != null) {
+              String typeExpr = jsDocInfo.getType().getRoot().getString();
+              add(":" + typeExpr);
+            }
+          }
         } else {
           Preconditions.checkState(childCount == 1);
           addIdentifier(n.getString());
@@ -256,7 +267,16 @@ class CodeGenerator {
 
       case Token.PARAM_LIST:
         add("(");
+
+        if (languageMode == LanguageMode.ATSCRIPT) {
+          JSDocInfo jsDocInfo = NodeUtil.getBestJSDocInfo(n);
+          if (jsDocInfo != null && jsDocInfo.getParameterCount() > 0) {
+            jsDocInfoToPrintParameterTypes = jsDocInfo;
+          }
+        }
+
         addList(first);
+        jsDocInfoToPrintParameterTypes = null;
         add(")");
         break;
 
@@ -358,6 +378,13 @@ class CodeGenerator {
         add(first);
 
         add(first.getNext());
+        if (languageMode == LanguageMode.ATSCRIPT) {
+          JSDocInfo jsDocInfo = NodeUtil.getBestJSDocInfo(n);
+          if (jsDocInfo != null && jsDocInfo.getReturnType() != null) {
+            String typeExpr = jsDocInfo.getReturnType().getRoot().getString();
+            add(":" + typeExpr);
+          }
+        }
         if (isArrow) {
           add("=>");
         }
@@ -1199,6 +1226,10 @@ class CodeGenerator {
       add(")");
     } else {
       add(n, context);
+    }
+    if (jsDocInfoToPrintParameterTypes != null) {
+      JSTypeExpression parameterType = jsDocInfoToPrintParameterTypes.getParameterType(n.getString());
+      add(":" + parameterType.getRoot().getString());
     }
   }
 
