@@ -42,10 +42,11 @@ public class TypescriptTypesTest extends CompilerTestCase {
   @Override
   protected CompilerOptions getOptions() {
     CompilerOptions options = super.getOptions();
-    options.setLanguageOut(LanguageMode.ATSCRIPT);
+    options.setLanguageOut(LanguageMode.ECMASCRIPT6_TYPED);
     // Note that in this context, turning on the checkTypes option won't
     // actually cause the type check to run.
     options.checkTypes = parseTypeInfo;
+    options.setRenamingPolicy(VariableRenamingPolicy.ALL, PropertyRenamingPolicy.ALL_UNQUOTED);
 
     return options;
   }
@@ -53,6 +54,18 @@ public class TypescriptTypesTest extends CompilerTestCase {
   @Override
   public CompilerPass getProcessor(Compiler compiler) {
     PhaseOptimizer optimizer = new PhaseOptimizer(compiler, null, null);
+    DefaultPassConfig passConfig = new DefaultPassConfig(getOptions());
+    optimizer.addOneTimePass(passConfig.es6RenameVariablesInParamLists);
+    //optimizer.addOneTimePass(passConfig.es6ConvertSuper);
+    //optimizer.addOneTimePass(passConfig.convertEs6ToEs3);
+    //optimizer.addOneTimePass(passConfig.rewriteLetConst);
+    optimizer.addOneTimePass(passConfig.renameProperties);
+    optimizer.addOneTimePass(passConfig.renameVars);
+    optimizer.addOneTimePass(passConfig.renameLabels);
+    optimizer.addOneTimePass(passConfig.aliasStrings);
+    optimizer.addOneTimePass(passConfig.replaceStrings);
+    optimizer.addOneTimePass(passConfig.gatherExternProperties);
+    optimizer.addOneTimePass(passConfig.generateExports);
     return optimizer;
 
   }
@@ -62,7 +75,7 @@ public class TypescriptTypesTest extends CompilerTestCase {
     return 1;
   }
 
-  public void testVariableDeclarationAddsType() {
+  public void testVariableDeclaration() {
     assertCompiled("/** @type {string} */ var print; print = \"hello\";",
         "var print:string;",
         "print = \"hello\";");
@@ -72,6 +85,19 @@ public class TypescriptTypesTest extends CompilerTestCase {
     assertCompiled("var print; print = \"hello\";",
         "var print;",
         "print = \"hello\";");
+  }
+
+  public void testFunct() throws Exception {
+    assertCompiled("/**\n" +
+        " * Log and possibly format the run-time type check warning. This\n" +
+        " * function is customized at compile-time.\n" +
+        " *\n" +
+        " * @param {string} warning the warning to log.\n" +
+        " * @param {*} expr the faulty expression.\n" +
+        " */\n" +
+        "$jscomp.typecheck.log = function(warning, expr) {};\n", "$jscomp.typecheck.log = function(warning:string, expr:any) {\n" +
+        "};");
+
   }
 
   public void testFunctionReturnType() throws Exception {
@@ -138,6 +164,10 @@ public class TypescriptTypesTest extends CompilerTestCase {
 
   public void testArrayType() throws Exception {
     assertCompiled("/** @type {Array.<string>} */ var s;", "var s:string[];");
+  }
+
+  public void testRecordType() throws Exception {
+    assertCompiled("/** @type {{myNum: number, myObject}} */ var s;", "var s:{myNum:number;myObject};");
   }
 
   private void assertCompiled(String source, String... expected) {

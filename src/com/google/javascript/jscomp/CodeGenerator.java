@@ -55,7 +55,7 @@ class CodeGenerator {
 
   // FIXME(alexeagle):
   // This is used to track the context of a function declaration
-  // for languageMode=ATSCRIPT
+  // for languageMode=ECMASCRIPT6_TYPED
   // and could probably be done a better way.
   private JSDocInfo jsDocInfoToPrintParameterTypes;
 
@@ -234,10 +234,10 @@ class CodeGenerator {
       case Token.NAME:
         if (first == null || first.isEmpty()) {
           addIdentifier(n.getString());
-          if (languageMode == LanguageMode.ATSCRIPT) {
+          if (languageMode == LanguageMode.ECMASCRIPT6_TYPED) {
             JSDocInfo jsDocInfo = NodeUtil.getBestJSDocInfo(n);
             if (jsDocInfo != null && jsDocInfo.getType() != null) {
-              addTypescriptTypeExpr(jsDocInfo.getType().getRoot());
+              addInlineTypeExpr(jsDocInfo.getType().getRoot());
             }
           }
         } else {
@@ -267,7 +267,7 @@ class CodeGenerator {
       case Token.PARAM_LIST:
         add("(");
 
-        if (languageMode == LanguageMode.ATSCRIPT) {
+        if (languageMode == LanguageMode.ECMASCRIPT6_TYPED) {
           JSDocInfo jsDocInfo = NodeUtil.getBestJSDocInfo(n);
           if (jsDocInfo != null && jsDocInfo.getParameterCount() > 0) {
             jsDocInfoToPrintParameterTypes = jsDocInfo;
@@ -377,10 +377,10 @@ class CodeGenerator {
         add(first);
 
         add(first.getNext());
-        if (languageMode == LanguageMode.ATSCRIPT) {
+        if (languageMode == LanguageMode.ECMASCRIPT6_TYPED) {
           JSDocInfo jsDocInfo = NodeUtil.getBestJSDocInfo(n);
           if (jsDocInfo != null && jsDocInfo.getReturnType() != null) {
-            addTypescriptTypeExpr(jsDocInfo.getReturnType().getRoot());
+            addInlineTypeExpr(jsDocInfo.getReturnType().getRoot());
           }
         }
         if (isArrow) {
@@ -1055,7 +1055,7 @@ class CodeGenerator {
     cc.endSourceMapping(n);
   }
 
-  private void addTypescriptTypeExpr(Node root) {
+  private void addInlineTypeExpr(Node root) {
     // A type declared as undefined is simply dropped.
     // This is to distinguish from a type declared with STAR
     if (root.getType() == Token.QMARK) {
@@ -1067,6 +1067,22 @@ class CodeGenerator {
     }
     if (root.getParent() == null) {
       add(":");
+    }
+    if (root.getType() == Token.LC) {
+      add("{");
+      boolean first = true;
+      for (Node property : root.getFirstChild().children()) {
+        if (!first) {
+          add(";");
+        }
+        if (property.getType() == Token.COLON) {
+          add(property.getFirstChild().getString() + ":" + property.getLastChild().getString());
+        } else {
+          add(property.getString());
+        }
+        first = false;
+      }
+      add("}");
     }
     if (root.isString()) {
       if (root.getString().equals("Array")) {
@@ -1083,7 +1099,7 @@ class CodeGenerator {
         if (!first) {
           add(",");
         }
-        addTypescriptTypeExpr(param);
+        addInlineTypeExpr(param);
         first = false;
       }
       add("):" + root.getLastChild().getString());
@@ -1265,7 +1281,7 @@ class CodeGenerator {
     if (jsDocInfoToPrintParameterTypes != null) {
       JSTypeExpression parameterType = jsDocInfoToPrintParameterTypes.getParameterType(n.getString());
       if (parameterType != null) {
-        addTypescriptTypeExpr(parameterType.getRoot());
+        addInlineTypeExpr(parameterType.getRoot());
       }
     }
   }

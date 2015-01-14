@@ -645,14 +645,12 @@ public final class CodePrinter {
   enum Format {
     COMPACT,
     PRETTY,
-    TYPED,
-    TYPESCRIPT;
+    TYPED;
 
     static Format fromOptions(CompilerOptions options, boolean outputTypes) {
-      if (options.getLanguageOut() == CompilerOptions.LanguageMode.ATSCRIPT) return Format.TYPESCRIPT;
+      if (options.getLanguageOut() == CompilerOptions.LanguageMode.ECMASCRIPT6_TYPED) return Format.PRETTY;
       if (outputTypes) return Format.TYPED;
-      if (options.prettyPrint) return Format.PRETTY;
-      return Format.COMPACT;
+      return options.prettyPrint ? Format.PRETTY : Format.COMPACT;
     }
   }
 
