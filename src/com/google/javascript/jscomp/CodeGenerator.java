@@ -237,8 +237,7 @@ class CodeGenerator {
           if (languageMode == LanguageMode.ATSCRIPT) {
             JSDocInfo jsDocInfo = NodeUtil.getBestJSDocInfo(n);
             if (jsDocInfo != null && jsDocInfo.getType() != null) {
-              String typeExpr = jsDocInfo.getType().getRoot().getString();
-              add(":" + typeExpr);
+              addTypescriptTypeExpr(jsDocInfo.getType().getRoot());
             }
           }
         } else {
@@ -381,8 +380,7 @@ class CodeGenerator {
         if (languageMode == LanguageMode.ATSCRIPT) {
           JSDocInfo jsDocInfo = NodeUtil.getBestJSDocInfo(n);
           if (jsDocInfo != null && jsDocInfo.getReturnType() != null) {
-            String typeExpr = jsDocInfo.getReturnType().getRoot().getString();
-            add(":" + typeExpr);
+            addTypescriptTypeExpr(jsDocInfo.getReturnType().getRoot());
           }
         }
         if (isArrow) {
@@ -1057,6 +1055,43 @@ class CodeGenerator {
     cc.endSourceMapping(n);
   }
 
+  private void addTypescriptTypeExpr(Node root) {
+    // A type declared as undefined is simply dropped.
+    // This is to distinguish from a type declared with STAR
+    if (root.getType() == Token.QMARK) {
+      return;
+    }
+    // TypeScript doesn't have any means to express a union type so these are just dropped.
+    if (root.getType() == Token.PIPE) {
+      return;
+    }
+    if (root.getParent() == null) {
+      add(":");
+    }
+    if (root.isString()) {
+      if (root.getString().equals("Array")) {
+        add(root.getLastChild().getFirstChild().getString() + "[]");
+      } else {
+        add(root.getString());
+      }
+    } else if (root.getType() == Token.STAR) {
+      add("any");
+    } else if (root.isFunction()) {
+      add("(");
+      boolean first = true;
+      for (Node param : root.getFirstChild().children()) {
+        if (!first) {
+          add(",");
+        }
+        addTypescriptTypeExpr(param);
+        first = false;
+      }
+      add("):" + root.getLastChild().getString());
+    } else if (root.getType() == Token.BANG || root.getType() == Token.EQUALS) {
+      add(root.getLastChild().getString());
+    }
+  }
+
   /**
    * We could use addList recursively here, but sometimes we produce
    * very deeply nested operators and run out of stack space, so we
@@ -1229,7 +1264,9 @@ class CodeGenerator {
     }
     if (jsDocInfoToPrintParameterTypes != null) {
       JSTypeExpression parameterType = jsDocInfoToPrintParameterTypes.getParameterType(n.getString());
-      add(":" + parameterType.getRoot().getString());
+      if (parameterType != null) {
+        addTypescriptTypeExpr(parameterType.getRoot());
+      }
     }
   }
 

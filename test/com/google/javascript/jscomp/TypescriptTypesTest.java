@@ -20,6 +20,8 @@ import com.google.common.base.Joiner;
 import com.google.javascript.jscomp.CompilerOptions.LanguageMode;
 import com.google.javascript.rhino.Node;
 
+import java.util.Arrays;
+
 import static java.util.Arrays.asList;
 
 /**
@@ -93,9 +95,55 @@ public class TypescriptTypesTest extends CompilerTestCase {
         "};");
   }
 
+  public void testNestedFunctions() throws Exception {
+    assertCompiled("/**@param {boolean} b*/ var f = function(b){var t = function(l) {}; t();};",
+        "var f = function(b:boolean) {",
+        "  var t = function(l) {",
+        "  };",
+        "  t();",
+        "};");
+  }
+
+  public void testNullableIsDropped() throws Exception {
+    assertCompiled("/** @param {!number} n @return {!string}*/ function s(n) { return '' };",
+        "function s(n:number):string {",
+        "  return \"\";",
+        "}",
+        ";");
+  }
+
+  public void testOptionalIsDropped() throws Exception {
+    assertCompiled("/** @param {goog.dom.Foo=} n */ function s(n) { };",
+        "function s(n:goog.dom.Foo) {",
+        "}",
+        ";");
+  }
+
+  public void testAnyType() throws Exception {
+    assertCompiled("/** @type {*} */ var n;", "var n:any;");
+  }
+
+  public void testUnknownType() throws Exception {
+    assertCompiled("/** @type {?} */ var n;", "var n;");
+  }
+
+  public void testFunctionType() throws Exception {
+    assertCompiled("/** @type {function(string,number):boolean} */ var n;", "var n:(string,number):boolean;");
+  }
+
+  // Sadly TypeScript doesn't understand union types so this is just lost
+  public void testTypeUnion() throws Exception {
+    assertCompiled("/** @type {(number|boolean)} */ var n;", "var n;");
+  }
+
+  public void testArrayType() throws Exception {
+    assertCompiled("/** @type {Array.<string>} */ var s;", "var s:string[];");
+  }
+
   private void assertCompiled(String source, String... expected) {
     compiler.init(externsInputs, asList(SourceFile.fromCode("expected", source)), getOptions());
     Node root = compiler.parseInputs();
+    assertEquals("Compiler error: " + Arrays.toString(compiler.getErrors()), 0, compiler.getErrorCount());
     assertEquals(Joiner.on("\n").join(expected), compiler.toSource().trim());
   }
 }
