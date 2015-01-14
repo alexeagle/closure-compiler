@@ -46,8 +46,6 @@ public class TypescriptTypesTest extends CompilerTestCase {
     // Note that in this context, turning on the checkTypes option won't
     // actually cause the type check to run.
     options.checkTypes = parseTypeInfo;
-    options.setRenamingPolicy(VariableRenamingPolicy.ALL, PropertyRenamingPolicy.ALL_UNQUOTED);
-
     return options;
   }
 
@@ -55,17 +53,6 @@ public class TypescriptTypesTest extends CompilerTestCase {
   public CompilerPass getProcessor(Compiler compiler) {
     PhaseOptimizer optimizer = new PhaseOptimizer(compiler, null, null);
     DefaultPassConfig passConfig = new DefaultPassConfig(getOptions());
-    optimizer.addOneTimePass(passConfig.es6RenameVariablesInParamLists);
-    //optimizer.addOneTimePass(passConfig.es6ConvertSuper);
-    //optimizer.addOneTimePass(passConfig.convertEs6ToEs3);
-    //optimizer.addOneTimePass(passConfig.rewriteLetConst);
-    optimizer.addOneTimePass(passConfig.renameProperties);
-    optimizer.addOneTimePass(passConfig.renameVars);
-    optimizer.addOneTimePass(passConfig.renameLabels);
-    optimizer.addOneTimePass(passConfig.aliasStrings);
-    optimizer.addOneTimePass(passConfig.replaceStrings);
-    optimizer.addOneTimePass(passConfig.gatherExternProperties);
-    optimizer.addOneTimePass(passConfig.generateExports);
     return optimizer;
 
   }
@@ -164,6 +151,7 @@ public class TypescriptTypesTest extends CompilerTestCase {
 
   public void testArrayType() throws Exception {
     assertCompiled("/** @type {Array.<string>} */ var s;", "var s:string[];");
+    assertCompiled("/** @type {!Array.<!$jscomp.typecheck.Checker>} */ var s;", "var s:$jscomp.typecheck.Checker[];");
   }
 
   public void testRecordType() throws Exception {

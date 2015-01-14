@@ -1084,9 +1084,14 @@ class CodeGenerator {
       }
       add("}");
     }
+    // Throw away nullable and optional modifiers
+    if (root.getType() == Token.BANG || root.getType() == Token.EQUALS) {
+      root = root.getLastChild();
+    }
     if (root.isString()) {
       if (root.getString().equals("Array")) {
-        add(root.getLastChild().getFirstChild().getString() + "[]");
+        addInlineTypeExpr(root.getLastChild().getFirstChild());
+        add("[]");
       } else {
         add(root.getString());
       }
@@ -1103,8 +1108,6 @@ class CodeGenerator {
         first = false;
       }
       add("):" + root.getLastChild().getString());
-    } else if (root.getType() == Token.BANG || root.getType() == Token.EQUALS) {
-      add(root.getLastChild().getString());
     }
   }
 
