@@ -490,6 +490,10 @@ public class CommandLineRunner extends
         usage = "Allows usage of const keyword.")
     private boolean acceptConstKeyword = false;
 
+    @Option(name = "--accept_type_syntax",
+        usage = "Allows usage of type syntax.")
+    private boolean acceptTypeSyntax = false;
+
     // TODO(tbreisacher): Remove the "(experimental)" for ES6 when it's stable enough.
     @Option(name = "--language_in",
         hidden = true,
@@ -1039,6 +1043,7 @@ public class CommandLineRunner extends
           .setOutputManifest(ImmutableList.of(flags.outputManifest))
           .setOutputModuleDependencies(flags.outputModuleDependencies)
           .setAcceptConstKeyword(flags.acceptConstKeyword)
+          .setAcceptTypeSyntax(flags.acceptTypeSyntax)
           .setLanguageIn(flags.languageIn)
           .setLanguageOut(flags.languageOut)
           .setProcessCommonJSModules(flags.processCommonJsModules)
@@ -1187,6 +1192,7 @@ public class CommandLineRunner extends
     "es3.js",
     "es5.js",
     "es6.js",
+    "es6_collections.js",
     "intl.js",
 
     // Event APIs
