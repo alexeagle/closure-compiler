@@ -44,9 +44,6 @@ public class TypescriptTypesTest extends CompilerTestCase {
   protected CompilerOptions getOptions() {
     CompilerOptions options = super.getOptions();
     options.setLanguageOut(LanguageMode.ECMASCRIPT6_TYPED);
-    // Note that in this context, turning on the checkTypes option won't
-    // actually cause the type check to run.
-    options.checkTypes = parseTypeInfo;
     options.setPreferSingleQuotes(true);
     return options;
   }
@@ -95,7 +92,7 @@ public class TypescriptTypesTest extends CompilerTestCase {
         "var f = function(b){return !b};")
         .transpilesTo(
             "var f = function(b: boolean): boolean {",
-            "  return!b;",
+            "  return !b;",
             "};");
   }
 
@@ -116,7 +113,7 @@ public class TypescriptTypesTest extends CompilerTestCase {
         "function s(n) { return ''; };")
         .transpilesTo(
             "function s(n: number): string {",
-            "  return'';",
+            "  return '';",
             "}",
             ";");
   }
@@ -131,7 +128,7 @@ public class TypescriptTypesTest extends CompilerTestCase {
 
   public void testAnyType() throws Exception {
     assertSource("/** @type {*} */ var n;")
-        .transpilesTo("var n: any;");
+        .transpilesTo("var n;");
   }
 
   public void testUnknownType() throws Exception {

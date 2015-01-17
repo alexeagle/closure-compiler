@@ -231,9 +231,7 @@ class CodeGenerator {
       case Token.NAME:
         if (first == null || first.isEmpty()) {
           addIdentifier(n.getString());
-          if (n.getProp(Node.DECLARED_TYPE_EXPR) != null) {
-            add(toInlineTypeExpr((JSTypeExpression) n.getProp(Node.DECLARED_TYPE_EXPR)));
-          }
+          addTypeExpr(n);
         } else {
           Preconditions.checkState(childCount == 1);
           addIdentifier(n.getString());
@@ -362,9 +360,7 @@ class CodeGenerator {
         add(first);
 
         add(first.getNext());
-        if (n.getProp(Node.DECLARED_TYPE_EXPR) != null) {
-          add(toInlineTypeExpr((JSTypeExpression) n.getProp(Node.DECLARED_TYPE_EXPR)));
-        }
+        addTypeExpr(n);
         if (isArrow) {
           add("=>");
         }
@@ -1037,6 +1033,15 @@ class CodeGenerator {
     cc.endSourceMapping(n);
   }
 
+  private void addTypeExpr(Node n) {
+    if (n.getProp(Node.DECLARED_TYPE_EXPR) != null) {
+      String inlineType = toInlineTypeExpr((JSTypeExpression) n.getProp(Node.DECLARED_TYPE_EXPR));
+      if (!inlineType.isEmpty()) {
+        add(": " + inlineType);
+      }
+    }
+  }
+
   /**
    * @param typeExpr a JSTypeExpression
    * @return the equivalent inline type representation (with the leading colon)
@@ -1050,9 +1055,6 @@ class CodeGenerator {
     // TODO(alexeagle): add support for the new union operator in 1.4
     if (root.getType() == Token.PIPE) {
       return "";
-    }
-    if (root.getParent() == null) {
-      result.append(": ");
     }
     if (root.getType() == Token.LC) {
       result.append("{");
@@ -1088,7 +1090,7 @@ class CodeGenerator {
       } else {
         result.append(root.getString());
       }
-    } else if (root.getType() == Token.STAR || root.getType() == Token.QMARK) {
+    } else if (root.getType() == Token.QMARK) {
       result.append("any");
     } else if (root.isFunction()) {
       result.append("(");

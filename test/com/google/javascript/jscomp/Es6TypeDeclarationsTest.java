@@ -57,7 +57,7 @@ public class Es6TypeDeclarationsTest extends TestCase {
         assertWithMessage(identifier + " missing DECLARED_TYPE_EXPR in " + root.toStringTree())
             .that(declaredType).isNotNull();
 
-        return new JSTypeExprSubject(failureStrategy, declaredType);
+        return new JSTypeExprSubject(failureStrategy, identifier, declaredType);
       }
     };
   }
@@ -65,13 +65,13 @@ public class Es6TypeDeclarationsTest extends TestCase {
   private class JSTypeExprSubject extends Subject<JSTypeExprSubject, String> {
     private final JSTypeExpression typeExpr;
 
-    public JSTypeExprSubject(FailureStrategy failureStrategy, JSTypeExpression typeExpr) {
-      super(failureStrategy, "");
+    public JSTypeExprSubject(FailureStrategy fs, String identifier, JSTypeExpression typeExpr) {
+      super(fs, identifier);
       this.typeExpr = typeExpr;
     }
 
     public void hasType(String type) {
-      assertTrue(typeExpr + " not of type " + type,
+      assertTrue(getSubject() + " is of type " + typeExpr + " not of type " + type,
           Node.newString(type).isEquivalentTo(typeExpr.getRoot()));
     }
   }
