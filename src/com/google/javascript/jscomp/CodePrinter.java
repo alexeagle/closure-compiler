@@ -339,6 +339,7 @@ public final class CodePrinter {
         append(op);
         append(" ");
       } else {
+        append(" ");
         append(op);
       }
     }
