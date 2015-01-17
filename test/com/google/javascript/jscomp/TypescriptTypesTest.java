@@ -23,9 +23,11 @@ import static java.util.Arrays.asList;
 import com.google.common.base.Joiner;
 import com.google.common.truth.*;
 import com.google.javascript.jscomp.CompilerOptions.LanguageMode;
+import com.google.javascript.rhino.Node;
 
 import java.util.Arrays;
 
+// FIXME: rename before submitting
 public class TypescriptTypesTest extends CompilerTestCase {
 
   private Compiler compiler;
@@ -51,7 +53,7 @@ public class TypescriptTypesTest extends CompilerTestCase {
 
   @Override
   public CompilerPass getProcessor(Compiler compiler) {
-    return new PhaseOptimizer(compiler, null, null);
+    return new Es6TypeDeclarations(compiler);
   }
 
   @Override
@@ -191,9 +193,10 @@ public class TypescriptTypesTest extends CompilerTestCase {
     private String doCompile(String... lines) {
       compiler.init(externsInputs,
           asList(SourceFile.fromCode("expected", Joiner.on("\n").join(lines))), getOptions());
-      compiler.parseInputs();
+      Node root = compiler.parseInputs();
       assertWithMessage("Parsing error: " + Arrays.toString(compiler.getErrors()))
           .that(compiler.getErrorCount()).is(0);
+      getProcessor(compiler).process(root.getFirstChild(), root.getLastChild());
       return compiler.toSource();
     }
 

@@ -21,7 +21,6 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.javascript.jscomp.CompilerOptions.LanguageMode;
-import com.google.javascript.rhino.JSDocInfo;
 import com.google.javascript.rhino.JSTypeExpression;
 import com.google.javascript.rhino.Node;
 import com.google.javascript.rhino.Token;
@@ -232,11 +231,8 @@ class CodeGenerator {
       case Token.NAME:
         if (first == null || first.isEmpty()) {
           addIdentifier(n.getString());
-          if (languageMode == LanguageMode.ECMASCRIPT6_TYPED) {
-            JSDocInfo jsDocInfo = NodeUtil.getBestJSDocInfo(n);
-            if (jsDocInfo != null && jsDocInfo.getType() != null) {
-              add(toInlineTypeExpr(jsDocInfo.getType().getRoot()));
-            }
+          if (n.getProp(Node.DECLARED_TYPE_EXPR) != null) {
+            add(toInlineTypeExpr((JSTypeExpression) n.getProp(Node.DECLARED_TYPE_EXPR)));
           }
         } else {
           Preconditions.checkState(childCount == 1);
@@ -366,11 +362,8 @@ class CodeGenerator {
         add(first);
 
         add(first.getNext());
-        if (languageMode == LanguageMode.ECMASCRIPT6_TYPED) {
-          JSDocInfo jsDocInfo = NodeUtil.getBestJSDocInfo(n);
-          if (jsDocInfo != null && jsDocInfo.getReturnType() != null) {
-            add(toInlineTypeExpr(jsDocInfo.getReturnType().getRoot()));
-          }
+        if (n.getProp(Node.DECLARED_TYPE_EXPR) != null) {
+          add(toInlineTypeExpr((JSTypeExpression) n.getProp(Node.DECLARED_TYPE_EXPR)));
         }
         if (isArrow) {
           add("=>");
@@ -1045,11 +1038,12 @@ class CodeGenerator {
   }
 
   /**
-   * @param root a Node which represents a JSTypeExpression
+   * @param typeExpr a JSTypeExpression
    * @return the equivalent inline type representation (with the leading colon)
    *         or the empty string if there is no type information to append.
    */
-  private String toInlineTypeExpr(Node root) {
+  private String toInlineTypeExpr(JSTypeExpression typeExpr) {
+    Node root = typeExpr.getRoot();
     StringBuilder result = new StringBuilder();
     
     // TypeScript 1.3 doesn't have any means to express a union type so these are just dropped.
@@ -1089,7 +1083,7 @@ class CodeGenerator {
         return "";
       }
       if (root.getString().equals("Array")) {
-        result.append(toInlineTypeExpr(root.getLastChild().getFirstChild()))
+        result.append(toInlineTypeExpr(new JSTypeExpression(root.getLastChild().getFirstChild(), "")))
             .append("[]");
       } else {
         result.append(root.getString());
@@ -1104,7 +1098,7 @@ class CodeGenerator {
           result.append(", ");
         }
         result.append("p").append(paramIdx).append(": ")
-            .append(toInlineTypeExpr(param));
+            .append(toInlineTypeExpr(new JSTypeExpression(param, "")));
         paramIdx++;
 
       }
@@ -1282,19 +1276,6 @@ class CodeGenerator {
       add(")");
     } else {
       add(n, context);
-    }
-
-    if (languageMode == LanguageMode.ECMASCRIPT6_TYPED) {
-      // TODO(alexeagle): This may not be correct for the nested case.
-      if (n.getParent() != null && n.getParent().isParamList()) {
-        JSDocInfo paramListJSDoc = NodeUtil.getBestJSDocInfo(n.getParent());
-        if (paramListJSDoc != null) {
-          JSTypeExpression parameterType = paramListJSDoc.getParameterType(n.getString());
-          if (parameterType != null) {
-            add(toInlineTypeExpr(parameterType.getRoot()));
-          }
-        }
-      }
     }
   }
 

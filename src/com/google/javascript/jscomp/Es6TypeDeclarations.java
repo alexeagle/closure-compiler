@@ -41,6 +41,12 @@ public class Es6TypeDeclarations extends AbstractPostOrderCallback
   public void visit(NodeTraversal t, Node n, Node parent) {
 
     switch (n.getType()) {
+      case Token.FUNCTION:
+        JSDocInfo bestJSDocInfo = NodeUtil.getBestJSDocInfo(n);
+        if (bestJSDocInfo != null) {
+          n.putProp(DECLARED_TYPE_EXPR, bestJSDocInfo.getReturnType());
+        }
+        break;
       case Token.NAME:
         if (parent == null) {
           break;
@@ -51,9 +57,6 @@ public class Es6TypeDeclarations extends AbstractPostOrderCallback
         }
         if (parent.isVar()) {
           n.putProp(DECLARED_TYPE_EXPR, parentJSDoc.getType());
-        }
-        if (parent.isFunction()) {
-          n.putProp(DECLARED_TYPE_EXPR, parentJSDoc.getReturnType());
         }
         if (parent.isParamList()) {
           JSTypeExpression parameterType = parentJSDoc.getParameterType(n.getString());

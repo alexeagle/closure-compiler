@@ -6,6 +6,7 @@ import com.google.common.truth.Subject;
 import com.google.common.truth.SubjectFactory;
 import com.google.javascript.rhino.JSTypeExpression;
 import com.google.javascript.rhino.Node;
+import com.google.javascript.rhino.Token;
 import junit.framework.TestCase;
 
 import static com.google.common.truth.Truth.assertAbout;
@@ -81,7 +82,10 @@ public class Es6TypeDeclarationsTest extends TestCase {
 
     @Override
     public void visit(NodeTraversal t, Node n, Node parent) {
-      if (n.matchesQualifiedName(name)) {
+      // Return type is attached to FUNCTION node, but the qualifiedName is on the child NAME node.
+      if (parent != null && parent.getType() == Token.FUNCTION && n.matchesQualifiedName(name)) {
+        foundNode = parent;
+      } else if (n.matchesQualifiedName(name)) {
         foundNode = n;
       }
     }
