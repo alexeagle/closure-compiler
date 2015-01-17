@@ -16,16 +16,18 @@ import static com.google.common.truth.Truth.assertWithMessage;
 public class Es6TypeDeclarationsTest extends TestCase {
 
   public void testVar() throws Exception {
-    assertAbout(compile("/** @type {string} */ var s;")).that("s").hasType("string");
+    assertAbout(compile("/** @type {string} */ var s;"))
+        .that("s").hasType("string");
   }
 
   public void testFunction() throws Exception {
-    assertAbout(compile("/** @return {boolean} */ function b(){}")).that("b").hasType("boolean");
+    assertAbout(compile("/** @return {boolean} */ function b(){}"))
+        .that("b").hasType("boolean");
   }
 
   public void testFunctionParameters() throws Exception {
-    assertAbout(compile("/** @param {number} n @param {string} s */ function t(n,s){}")).that("n").hasType("number");
-
+    assertAbout(compile("/** @param {number} n @param {string} s */ function t(n,s){}"))
+        .that("n").hasType("number");
   }
 
   public SubjectFactory<JSTypeExprSubject, String> compile(String js) {
@@ -50,8 +52,9 @@ public class Es6TypeDeclarationsTest extends TestCase {
         NodeTraversal.traverse(compiler, root, visitor);
         assertWithMessage("Did not find a node named " + identifier + " in " + root.toStringTree())
             .that(visitor.foundNode).isNotNull();
-        JSTypeExpression declaredType = (JSTypeExpression) visitor.foundNode.getProp(Node.DECLARED_TYPE_EXPR);
-        assertWithMessage(identifier + " does not have a DECLARED_TYPE_EXPR in " + root.toStringTree())
+        JSTypeExpression declaredType =
+            (JSTypeExpression) visitor.foundNode.getProp(Node.DECLARED_TYPE_EXPR);
+        assertWithMessage(identifier + " missing DECLARED_TYPE_EXPR in " + root.toStringTree())
             .that(declaredType).isNotNull();
 
         return new JSTypeExprSubject(failureStrategy, declaredType);
@@ -68,7 +71,8 @@ public class Es6TypeDeclarationsTest extends TestCase {
     }
 
     public void hasType(String type) {
-      assertTrue(typeExpr + " not of type " + type, Node.newString(type).isEquivalentTo(typeExpr.getRoot()));
+      assertTrue(typeExpr + " not of type " + type,
+          Node.newString(type).isEquivalentTo(typeExpr.getRoot()));
     }
   }
 

@@ -64,6 +64,7 @@ public class Es6TypeDeclarations extends AbstractPostOrderCallback
             n.putProp(DECLARED_TYPE_EXPR, parameterType);
           }
         }
+        break;
     }
   }
 
