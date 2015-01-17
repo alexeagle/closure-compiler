@@ -21,7 +21,11 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.javascript.jscomp.CompilerOptions.LanguageMode;
-import com.google.javascript.rhino.*;
+import com.google.javascript.rhino.JSDocInfo;
+import com.google.javascript.rhino.JSTypeExpression;
+import com.google.javascript.rhino.Node;
+import com.google.javascript.rhino.Token;
+import com.google.javascript.rhino.TokenStream;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -52,12 +56,6 @@ class CodeGenerator {
   private final boolean preserveTypeAnnotations;
   private final boolean trustedStrings;
   private final LanguageMode languageMode;
-
-  // FIXME(alexeagle):
-  // This is used to track the context of a function declaration
-  // for languageMode=ECMASCRIPT6_TYPED
-  // and could probably be done a better way.
-  private JSDocInfo jsDocInfoToPrintParameterTypes;
 
   private CodeGenerator(CodeConsumer consumer) {
     cc = consumer;
@@ -237,7 +235,7 @@ class CodeGenerator {
           if (languageMode == LanguageMode.ECMASCRIPT6_TYPED) {
             JSDocInfo jsDocInfo = NodeUtil.getBestJSDocInfo(n);
             if (jsDocInfo != null && jsDocInfo.getType() != null) {
-              addInlineTypeExpr(jsDocInfo.getType().getRoot());
+              add(toInlineTypeExpr(jsDocInfo.getType().getRoot()));
             }
           }
         } else {
@@ -266,16 +264,7 @@ class CodeGenerator {
 
       case Token.PARAM_LIST:
         add("(");
-
-        if (languageMode == LanguageMode.ECMASCRIPT6_TYPED) {
-          JSDocInfo jsDocInfo = NodeUtil.getBestJSDocInfo(n);
-          if (jsDocInfo != null && jsDocInfo.getParameterCount() > 0) {
-            jsDocInfoToPrintParameterTypes = jsDocInfo;
-          }
-        }
-
         addList(first);
-        jsDocInfoToPrintParameterTypes = null;
         add(")");
         break;
 
@@ -380,7 +369,7 @@ class CodeGenerator {
         if (languageMode == LanguageMode.ECMASCRIPT6_TYPED) {
           JSDocInfo jsDocInfo = NodeUtil.getBestJSDocInfo(n);
           if (jsDocInfo != null && jsDocInfo.getReturnType() != null) {
-            addInlineTypeExpr(jsDocInfo.getReturnType().getRoot());
+            add(toInlineTypeExpr(jsDocInfo.getReturnType().getRoot()));
           }
         }
         if (isArrow) {
@@ -1055,60 +1044,73 @@ class CodeGenerator {
     cc.endSourceMapping(n);
   }
 
-  private void addInlineTypeExpr(Node root) {
-    // A type declared as undefined is simply dropped.
-    // This is to distinguish from a type declared with STAR
-    if (root.getType() == Token.QMARK) {
-      return;
-    }
-    // TypeScript doesn't have any means to express a union type so these are just dropped.
+  /**
+   * @param root a Node which represents a JSTypeExpression
+   * @return the equivalent inline type representation (with the leading colon)
+   *         or the empty string if there is no type information to append.
+   */
+  private String toInlineTypeExpr(Node root) {
+    StringBuilder result = new StringBuilder();
+    
+    // TypeScript 1.3 doesn't have any means to express a union type so these are just dropped.
+    // TODO(alexeagle): add support for the new union operator in 1.4
     if (root.getType() == Token.PIPE) {
-      return;
+      return "";
     }
     if (root.getParent() == null) {
-      add(":");
+      result.append(": ");
     }
     if (root.getType() == Token.LC) {
-      add("{");
+      result.append("{");
       boolean first = true;
       for (Node property : root.getFirstChild().children()) {
         if (!first) {
-          add(";");
+          result.append("; ");
         }
         if (property.getType() == Token.COLON) {
-          add(property.getFirstChild().getString() + ":" + property.getLastChild().getString());
+          result.append(property.getFirstChild().getString())
+              .append(": ")
+              .append(property.getLastChild().getString());
         } else {
-          add(property.getString());
+          result.append(property.getString());
         }
         first = false;
       }
-      add("}");
+      result.append("}");
     }
     // Throw away nullable and optional modifiers
+    // TODO(alexeagle): if Typescript adds support for nullable/optional types
+    // then we should emit that here.
     if (root.getType() == Token.BANG || root.getType() == Token.EQUALS) {
       root = root.getLastChild();
     }
     if (root.isString()) {
+      if (root.getString().equals("undefined") || root.getString().equals("null")) {
+        return "";
+      }
       if (root.getString().equals("Array")) {
-        addInlineTypeExpr(root.getLastChild().getFirstChild());
-        add("[]");
+        result.append(toInlineTypeExpr(root.getLastChild().getFirstChild()))
+            .append("[]");
       } else {
-        add(root.getString());
+        result.append(root.getString());
       }
-    } else if (root.getType() == Token.STAR) {
-      add("any");
+    } else if (root.getType() == Token.STAR || root.getType() == Token.QMARK) {
+      result.append("any");
     } else if (root.isFunction()) {
-      add("(");
-      boolean first = true;
+      result.append("(");
+      int paramIdx = 1;
       for (Node param : root.getFirstChild().children()) {
-        if (!first) {
-          add(",");
+        if (paramIdx > 1) {
+          result.append(", ");
         }
-        addInlineTypeExpr(param);
-        first = false;
+        result.append("p").append(paramIdx).append(": ")
+            .append(toInlineTypeExpr(param));
+        paramIdx++;
+
       }
-      add("):" + root.getLastChild().getString());
+      result.append(") => ").append(root.getLastChild().getString());
     }
+    return result.toString();
   }
 
   /**
@@ -1281,10 +1283,17 @@ class CodeGenerator {
     } else {
       add(n, context);
     }
-    if (jsDocInfoToPrintParameterTypes != null) {
-      JSTypeExpression parameterType = jsDocInfoToPrintParameterTypes.getParameterType(n.getString());
-      if (parameterType != null) {
-        addInlineTypeExpr(parameterType.getRoot());
+
+    if (languageMode == LanguageMode.ECMASCRIPT6_TYPED) {
+      // TODO(alexeagle): This may not be correct for the nested case.
+      if (n.getParent() != null && n.getParent().isParamList()) {
+        JSDocInfo paramListJSDoc = NodeUtil.getBestJSDocInfo(n.getParent());
+        if (paramListJSDoc != null) {
+          JSTypeExpression parameterType = paramListJSDoc.getParameterType(n.getString());
+          if (parameterType != null) {
+            add(toInlineTypeExpr(parameterType.getRoot()));
+          }
+        }
       }
     }
   }

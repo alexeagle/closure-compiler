@@ -16,17 +16,21 @@
 
 package com.google.javascript.jscomp;
 
+import static com.google.common.truth.Truth.assertAbout;
+import static com.google.common.truth.Truth.assertWithMessage;
+import static com.google.testing.testsize.MediumTestAttribute.THREADS;
+import static java.util.Arrays.asList;
+
 import com.google.common.base.Joiner;
+import com.google.common.truth.*;
 import com.google.javascript.jscomp.CompilerOptions.LanguageMode;
-import com.google.javascript.rhino.Node;
+import com.google.testing.testsize.MediumTest;
 
 import java.util.Arrays;
 
-import static java.util.Arrays.asList;
-
-/**
- *
- */
+@MediumTest(THREADS)
+// FIXME(alexeagle): rename to Es6InlineTypesTest
+// DO NOT SUBMIT
 public class TypescriptTypesTest extends CompilerTestCase {
 
   private Compiler compiler;
@@ -46,15 +50,13 @@ public class TypescriptTypesTest extends CompilerTestCase {
     // Note that in this context, turning on the checkTypes option won't
     // actually cause the type check to run.
     options.checkTypes = parseTypeInfo;
+    options.setPreferSingleQuotes(true);
     return options;
   }
 
   @Override
   public CompilerPass getProcessor(Compiler compiler) {
-    PhaseOptimizer optimizer = new PhaseOptimizer(compiler, null, null);
-    DefaultPassConfig passConfig = new DefaultPassConfig(getOptions());
-    return optimizer;
-
+    return new PhaseOptimizer(compiler, null, null);
   }
 
   @Override
@@ -63,105 +65,145 @@ public class TypescriptTypesTest extends CompilerTestCase {
   }
 
   public void testVariableDeclaration() {
-    assertCompiled("/** @type {string} */ var print; print = \"hello\";",
-        "var print:string;",
-        "print = \"hello\";");
+    assertSource("/** @type {string} */ var print;")
+        .transpilesTo("var print: string;");
   }
 
   public void testVariableDeclarationWithoutDeclaredType() throws Exception {
-    assertCompiled("var print; print = \"hello\";",
-        "var print;",
-        "print = \"hello\";");
-  }
-
-  public void testFunct() throws Exception {
-    assertCompiled("/**\n" +
-        " * Log and possibly format the run-time type check warning. This\n" +
-        " * function is customized at compile-time.\n" +
-        " *\n" +
-        " * @param {string} warning the warning to log.\n" +
-        " * @param {*} expr the faulty expression.\n" +
-        " */\n" +
-        "$jscomp.typecheck.log = function(warning, expr) {};\n", "$jscomp.typecheck.log = function(warning:string, expr:any) {\n" +
-        "};");
-
+    assertSource("var print;")
+        .transpilesTo("var print;");
   }
 
   public void testFunctionReturnType() throws Exception {
-    assertCompiled("/** @return {boolean} */ function b(){}",
-        "function b():boolean {",
-        "}",
-        ";");
+    assertSource("/** @return {boolean} */ function b(){}")
+        .transpilesTo(
+            "function b(): boolean {",
+            "}",
+            ";");
   }
 
   public void testFunctionParameterTypes() throws Exception {
-    assertCompiled("/** @param {number} n @param {string} s */ function t(n,s){}",
-        "function t(n:number, s:string) {",
-        "}",
-        ";");
+    assertSource(
+        "/** @param {number} n @param {string} s */",
+        "function t(n,s){}")
+        .transpilesTo(
+            "function t(n: number, s: string) {",
+            "}",
+            ";");
   }
 
   public void testFunctionInsideAssignment() throws Exception {
-    assertCompiled("/** @param {boolean} b @return {boolean} */ var f = function(b){return !b};",
-        "var f = function(b:boolean):boolean {",
-        "  return!b;",
-        "};");
+    assertSource(
+        "/** @param {boolean} b @return {boolean} */",
+        "var f = function(b){return !b};")
+        .transpilesTo(
+            "var f = function(b: boolean): boolean {",
+            "  return!b;",
+            "};");
   }
 
   public void testNestedFunctions() throws Exception {
-    assertCompiled("/**@param {boolean} b*/ var f = function(b){var t = function(l) {}; t();};",
-        "var f = function(b:boolean) {",
-        "  var t = function(l) {",
-        "  };",
-        "  t();",
-        "};");
+    assertSource("/**@param {boolean} b*/",
+        "var f = function(b){var t = function(l) {}; t();};")
+        .transpilesTo(
+            "var f = function(b: boolean) {",
+            "  var t = function(l) {",
+            "  };",
+            "  t();",
+            "};");
   }
 
   public void testNullableIsDropped() throws Exception {
-    assertCompiled("/** @param {!number} n @return {!string}*/ function s(n) { return '' };",
-        "function s(n:number):string {",
-        "  return \"\";",
-        "}",
-        ";");
+    assertSource(
+        "/** @param {!number} n @return {!string}*/",
+        "function s(n) { return ''; };")
+        .transpilesTo(
+            "function s(n: number): string {",
+            "  return'';",
+            "}",
+            ";");
   }
 
   public void testOptionalIsDropped() throws Exception {
-    assertCompiled("/** @param {goog.dom.Foo=} n */ function s(n) { };",
-        "function s(n:goog.dom.Foo) {",
-        "}",
-        ";");
+    assertSource("/** @param {goog.dom.Foo=} n */ function s(n) { };")
+        .transpilesTo(
+            "function s(n: goog.dom.Foo) {",
+            "}",
+            ";");
   }
 
   public void testAnyType() throws Exception {
-    assertCompiled("/** @type {*} */ var n;", "var n:any;");
+    assertSource("/** @type {*} */ var n;")
+        .transpilesTo("var n: any;");
   }
 
   public void testUnknownType() throws Exception {
-    assertCompiled("/** @type {?} */ var n;", "var n;");
+    assertSource("/** @type {?} */ var n;")
+        .transpilesTo("var n: any;");
+  }
+
+  public void testUndefinedType() throws Exception {
+    assertSource("/** @type {undefined} */ var n;")
+        .transpilesTo("var n;");
+  }
+
+  public void testNullType() throws Exception {
+    assertSource("/** @type {null} */ var n;")
+        .transpilesTo("var n;");
   }
 
   public void testFunctionType() throws Exception {
-    assertCompiled("/** @type {function(string,number):boolean} */ var n;", "var n:(string,number):boolean;");
+    assertSource("/** @type {function(string,number):boolean} */ var n;")
+        .transpilesTo("var n: (p1: string, p2: number) => boolean;");
   }
 
   // Sadly TypeScript doesn't understand union types so this is just lost
   public void testTypeUnion() throws Exception {
-    assertCompiled("/** @type {(number|boolean)} */ var n;", "var n;");
+    assertSource("/** @type {(number|boolean)} */ var n;")
+        .transpilesTo("var n;");
   }
 
   public void testArrayType() throws Exception {
-    assertCompiled("/** @type {Array.<string>} */ var s;", "var s:string[];");
-    assertCompiled("/** @type {!Array.<!$jscomp.typecheck.Checker>} */ var s;", "var s:$jscomp.typecheck.Checker[];");
+    assertSource("/** @type {Array.<string>} */ var s;")
+        .transpilesTo("var s: string[];");
+    assertSource("/** @type {!Array.<!$jscomp.typecheck.Checker>} */ var s;")
+        .transpilesTo("var s: $jscomp.typecheck.Checker[];");
   }
 
   public void testRecordType() throws Exception {
-    assertCompiled("/** @type {{myNum: number, myObject}} */ var s;", "var s:{myNum:number;myObject};");
+    assertSource("/** @type {{myNum: number, myObject}} */ var s;")
+        .transpilesTo("var s: {myNum: number; myObject};");
   }
 
-  private void assertCompiled(String source, String... expected) {
-    compiler.init(externsInputs, asList(SourceFile.fromCode("expected", source)), getOptions());
-    Node root = compiler.parseInputs();
-    assertEquals("Compiler error: " + Arrays.toString(compiler.getErrors()), 0, compiler.getErrorCount());
-    assertEquals(Joiner.on("\n").join(expected), compiler.toSource().trim());
+  private SourceTranslationSubject assertSource(String... s) {
+    return assertAbout(SOURCE).that(s);
+  }
+
+  private final SubjectFactory<SourceTranslationSubject, String[]> SOURCE =
+      new SubjectFactory<SourceTranslationSubject, String[]>() {
+    @Override
+    public SourceTranslationSubject getSubject(FailureStrategy fs, String[] o) {
+      return new SourceTranslationSubject(fs, o);
+    }};
+
+  private class SourceTranslationSubject
+      extends Subject<SourceTranslationSubject, String[]> {
+
+    public SourceTranslationSubject(FailureStrategy failureStrategy, String[] s) {
+      super(failureStrategy, s);
+    }
+
+    private String doCompile(String... lines) {
+      compiler.init(externsInputs,
+          asList(SourceFile.fromCode("expected", Joiner.on("\n").join(lines))), getOptions());
+      compiler.parseInputs();
+      assertWithMessage("Parsing error: " + Arrays.toString(compiler.getErrors()))
+          .that(compiler.getErrorCount()).is(0);
+      return compiler.toSource();
+    }
+
+    public void transpilesTo(String... lines) {
+      Truth.assertThat(doCompile(getSubject()).trim()).is(Joiner.on("\n").join(lines));
+    }
   }
 }
