@@ -18,19 +18,14 @@ package com.google.javascript.jscomp;
 
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static com.google.testing.testsize.MediumTestAttribute.THREADS;
 import static java.util.Arrays.asList;
 
 import com.google.common.base.Joiner;
 import com.google.common.truth.*;
 import com.google.javascript.jscomp.CompilerOptions.LanguageMode;
-import com.google.testing.testsize.MediumTest;
 
 import java.util.Arrays;
 
-@MediumTest(THREADS)
-// FIXME(alexeagle): rename to Es6InlineTypesTest
-// DO NOT SUBMIT
 public class TypescriptTypesTest extends CompilerTestCase {
 
   private Compiler compiler;
