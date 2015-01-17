@@ -1037,7 +1037,7 @@ class CodeGenerator {
     if (n.getProp(Node.DECLARED_TYPE_EXPR) != null) {
       String inlineType = toInlineTypeExpr((JSTypeExpression) n.getProp(Node.DECLARED_TYPE_EXPR));
       if (!inlineType.isEmpty()) {
-        add(": " + inlineType);
+        add(inlineType);
       }
     }
   }
@@ -1049,49 +1049,70 @@ class CodeGenerator {
    */
   private String toInlineTypeExpr(JSTypeExpression typeExpr) {
     Node root = typeExpr.getRoot();
+    return toInlineTypeExpr(root);
+  }
+
+  private String toInlineTypeExpr(Node root) {
     StringBuilder result = new StringBuilder();
-    
-    // TypeScript 1.3 doesn't have any means to express a union type so these are just dropped.
-    // TODO(alexeagle): add support for the new union operator in 1.4
-    if (root.getType() == Token.PIPE) {
-      return "";
-    }
-    if (root.getType() == Token.LC) {
-      result.append("{");
-      boolean first = true;
-      for (Node property : root.getFirstChild().children()) {
-        if (!first) {
-          result.append("; ");
-        }
-        if (property.getType() == Token.COLON) {
-          result.append(property.getFirstChild().getString())
-              .append(": ")
-              .append(property.getLastChild().getString());
-        } else {
-          result.append(property.getString());
-        }
-        first = false;
+
+    if (root.getParent() == null) {
+      if (root.getType() == Token.EQUALS) {
+        result.append("?");
       }
-      result.append("}");
+      result.append(": ");
     }
-    // Throw away nullable and optional modifiers
-    // TODO(alexeagle): if Typescript adds support for nullable/optional types
-    // then we should emit that here.
-    if (root.getType() == Token.BANG || root.getType() == Token.EQUALS) {
-      root = root.getLastChild();
+
+    switch (root.getType()) {
+      // TypeScript 1.3 doesn't have any means to express a union type so these are just dropped.
+      // TODO(alexeagle): add support for the new union operator in 1.4
+      case Token.PIPE:
+        return "";
+      // There is no equivalent of Closure's definition of the "any" type.
+      case Token.STAR:
+        return "";
+      // Throw away nullable modifier
+      // TODO(alexeagle): if Typescript adds support for nullable types
+      // then we should emit that here.
+      case Token.BANG:
+      case Token.EQUALS:
+        root = root.getLastChild();
+        break;
+      case Token.LC:
+        result.append("{");
+        boolean first = true;
+        for (Node property : root.getFirstChild().children()) {
+          if (!first) {
+            result.append("; ");
+          }
+          if (property.getType() == Token.COLON) {
+            result.append(property.getFirstChild().getString())
+                .append(": ")
+                .append(property.getLastChild().getString());
+          } else {
+            result.append(property.getString());
+          }
+          first = false;
+        }
+        result.append("}");
+        break;
     }
+
     if (root.isString()) {
       if (root.getString().equals("undefined") || root.getString().equals("null")) {
         return "";
       }
       if (root.getString().equals("Array")) {
-        result.append(toInlineTypeExpr(new JSTypeExpression(root.getLastChild().getFirstChild(), "")))
+        result.append(toInlineTypeExpr(root.getLastChild().getFirstChild()))
             .append("[]");
       } else {
         result.append(root.getString());
       }
     } else if (root.getType() == Token.QMARK) {
-      result.append("any");
+      if (root.hasChildren()) {
+        result.append(toInlineTypeExpr(root.getFirstChild()));
+      } else {
+        result.append("any");
+      }
     } else if (root.isFunction()) {
       result.append("(");
       int paramIdx = 1;
@@ -1100,7 +1121,7 @@ class CodeGenerator {
           result.append(", ");
         }
         result.append("p").append(paramIdx).append(": ")
-            .append(toInlineTypeExpr(new JSTypeExpression(param, "")));
+            .append(toInlineTypeExpr(param));
         paramIdx++;
 
       }

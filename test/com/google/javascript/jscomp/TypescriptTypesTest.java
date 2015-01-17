@@ -109,7 +109,7 @@ public class TypescriptTypesTest extends CompilerTestCase {
 
   public void testNullableIsDropped() throws Exception {
     assertSource(
-        "/** @param {!number} n @return {!string}*/",
+        "/** @param {!number} n @return {?string}*/",
         "function s(n) { return ''; };")
         .transpilesTo(
             "function s(n: number): string {",
@@ -118,10 +118,10 @@ public class TypescriptTypesTest extends CompilerTestCase {
             ";");
   }
 
-  public void testOptionalIsDropped() throws Exception {
+  public void testOptionalParameter() throws Exception {
     assertSource("/** @param {goog.dom.Foo=} n */ function s(n) { };")
         .transpilesTo(
-            "function s(n: goog.dom.Foo) {",
+            "function s(n?: goog.dom.Foo) {",
             "}",
             ";");
   }
