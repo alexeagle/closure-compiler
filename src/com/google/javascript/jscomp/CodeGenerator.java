@@ -26,6 +26,7 @@ import com.google.javascript.rhino.Node;
 import com.google.javascript.rhino.Token;
 import com.google.javascript.rhino.TokenStream;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
@@ -1036,7 +1037,7 @@ class CodeGenerator {
   private void addTypeExpr(Node n) {
     if (n.getProp(Node.DECLARED_TYPE_EXPR) != null) {
       String inlineType = toInlineTypeExpr((JSTypeExpression) n.getProp(Node.DECLARED_TYPE_EXPR));
-      if (!inlineType.isEmpty()) {
+      if (inlineType != null) {
         add(inlineType);
       }
     }
@@ -1045,13 +1046,15 @@ class CodeGenerator {
   /**
    * @param typeExpr a JSTypeExpression
    * @return the equivalent inline type representation (with the leading colon)
-   *         or the empty string if there is no type information to append.
+   *             or null if there is no type information to append.
    */
+  @Nullable
   private String toInlineTypeExpr(JSTypeExpression typeExpr) {
     Node root = typeExpr.getRoot();
     return toInlineTypeExpr(root);
   }
 
+  @Nullable
   private String toInlineTypeExpr(Node root) {
     StringBuilder result = new StringBuilder();
 
@@ -1066,17 +1069,17 @@ class CodeGenerator {
       // TypeScript 1.3 doesn't have any means to express a union type so these are just dropped.
       // TODO(alexeagle): add support for the new union operator in 1.4
       case Token.PIPE:
-        return "";
       // There is no equivalent of Closure's definition of the "any" type.
       case Token.STAR:
-        return "";
+        return null;
+
       // Throw away nullable modifier
       // TODO(alexeagle): if Typescript adds support for nullable types
       // then we should emit that here.
       case Token.BANG:
       case Token.EQUALS:
-        root = root.getLastChild();
-        break;
+        return result.append(toInlineTypeExpr(root.getLastChild())).toString();
+
       case Token.LC:
         result.append("{");
         boolean first = true;
@@ -1095,37 +1098,45 @@ class CodeGenerator {
         }
         result.append("}");
         break;
-    }
 
-    if (root.isString()) {
-      if (root.getString().equals("undefined") || root.getString().equals("null")) {
-        return "";
-      }
-      if (root.getString().equals("Array")) {
-        result.append(toInlineTypeExpr(root.getLastChild().getFirstChild()))
-            .append("[]");
-      } else {
-        result.append(root.getString());
-      }
-    } else if (root.getType() == Token.QMARK) {
-      if (root.hasChildren()) {
-        result.append(toInlineTypeExpr(root.getFirstChild()));
-      } else {
-        result.append("any");
-      }
-    } else if (root.isFunction()) {
-      result.append("(");
-      int paramIdx = 1;
-      for (Node param : root.getFirstChild().children()) {
-        if (paramIdx > 1) {
-          result.append(", ");
+      case Token.STRING:
+        if (root.getString().equals("undefined") || root.getString().equals("null")) {
+          return null;
         }
-        result.append("p").append(paramIdx).append(": ")
-            .append(toInlineTypeExpr(param));
-        paramIdx++;
+        if (root.getString().equals("Array")) {
+          // AST is eg. STRING Array > BLOCK > STRING string
+          result.append(toInlineTypeExpr(root.getLastChild().getFirstChild()))
+              .append("[]");
+        } else {
+          result.append(root.getString());
+        }
+        break;
 
-      }
-      result.append(") => ").append(root.getLastChild().getString());
+      case Token.QMARK:
+        if (root.hasChildren()) {
+          result.append(toInlineTypeExpr(root.getFirstChild()));
+        } else {
+          result.append("any");
+        }
+        break;
+
+      case Token.FUNCTION:
+        result.append("(");
+        int paramIdx = 1;
+        for (Node param : root.getFirstChild().children()) {
+          if (paramIdx > 1) {
+            result.append(", ");
+          }
+          result.append("p").append(paramIdx).append(": ")
+              .append(toInlineTypeExpr(param));
+          paramIdx++;
+
+        }
+        result.append(") => ").append(root.getLastChild().getString());
+        break;
+
+      default:
+        break;
     }
     return result.toString();
   }
