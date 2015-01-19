@@ -127,7 +127,9 @@ public class Node implements Cloneable, Serializable {
                                   // GlobalTypeInfo and NewTypeInference.
                                   // We use this to tag getprop nodes that
                                   // declare properties.
-      DECLARED_TYPE_EXPR = 77;
+      DECLARED_TYPE_EXPR = 77;    // Used to attach JSTypeExpression objects to
+                                  // Nodes which represent a typed NAME or
+                                  // FUNCTION.
 
 
   public static final int   // flags for INCRDECR_PROP

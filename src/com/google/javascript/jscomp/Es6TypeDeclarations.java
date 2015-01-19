@@ -28,8 +28,7 @@ import static com.google.javascript.rhino.Node.DECLARED_TYPE_EXPR;
  * Copies type declarations from the JSDoc (possibly of a parent node)
  * to a property on a node which represents a typed language element.
  */
-public class Es6TypeDeclarations extends AbstractPostOrderCallback
-    implements HotSwapCompilerPass {
+public class Es6TypeDeclarations implements HotSwapCompilerPass {
 
   private final AbstractCompiler compiler;
 
@@ -38,43 +37,45 @@ public class Es6TypeDeclarations extends AbstractPostOrderCallback
   }
 
   @Override
-  public void visit(NodeTraversal t, Node n, Node parent) {
-
-    switch (n.getType()) {
-      case Token.FUNCTION:
-        JSDocInfo bestJSDocInfo = NodeUtil.getBestJSDocInfo(n);
-        if (bestJSDocInfo != null) {
-          n.putProp(DECLARED_TYPE_EXPR, bestJSDocInfo.getReturnType());
-        }
-        break;
-      case Token.NAME:
-        if (parent == null) {
-          break;
-        }
-        JSDocInfo parentJSDoc = NodeUtil.getBestJSDocInfo(parent);
-        if (parentJSDoc == null) {
-          break;
-        }
-        if (parent.isVar()) {
-          n.putProp(DECLARED_TYPE_EXPR, parentJSDoc.getType());
-        }
-        if (parent.isParamList()) {
-          JSTypeExpression parameterType = parentJSDoc.getParameterType(n.getString());
-          if (parameterType != null) {
-            n.putProp(DECLARED_TYPE_EXPR, parameterType);
-          }
-        }
-        break;
-    }
+  public void process(Node externs, Node root) {
+    hotSwapScript(root, null);
   }
 
   @Override
   public void hotSwapScript(Node scriptRoot, Node originalRoot) {
-    NodeTraversal.traverseRoots(compiler, this, scriptRoot, originalRoot);
+    new NodeTraversal(compiler, new Es6TypesCallback()).traverse(scriptRoot);
   }
 
-  @Override
-  public void process(Node externs, Node root) {
-    NodeTraversal.traverseRoots(compiler, this, externs, root);
+  private class Es6TypesCallback extends AbstractPostOrderCallback {
+    @Override
+    public void visit(NodeTraversal t, Node n, Node parent) {
+      switch (n.getType()) {
+        case Token.FUNCTION:
+          JSDocInfo bestJSDocInfo = NodeUtil.getBestJSDocInfo(n);
+          if (bestJSDocInfo != null) {
+            n.putProp(DECLARED_TYPE_EXPR, bestJSDocInfo.getReturnType());
+          }
+          break;
+        case Token.NAME:
+          if (parent == null) {
+            break;
+          }
+          JSDocInfo parentJSDoc = NodeUtil.getBestJSDocInfo(parent);
+          if (parentJSDoc == null) {
+            break;
+          }
+          if (parent.isVar()) {
+            n.putProp(DECLARED_TYPE_EXPR, parentJSDoc.getType());
+          } else if (parent.isParamList()) {
+            JSTypeExpression parameterType = parentJSDoc.getParameterType(n.getString());
+            if (parameterType != null) {
+              n.putProp(DECLARED_TYPE_EXPR, parameterType);
+            }
+          }
+          break;
+        default:
+          break;
+      }
+    }
   }
 }
