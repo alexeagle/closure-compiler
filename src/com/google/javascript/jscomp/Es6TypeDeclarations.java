@@ -22,13 +22,11 @@ import com.google.javascript.rhino.JSTypeExpression;
 import com.google.javascript.rhino.Node;
 import com.google.javascript.rhino.Token;
 
-import static com.google.javascript.rhino.Node.DECLARED_TYPE_EXPR;
-
 /**
  * Copies type declarations from the JSDoc (possibly of a parent node)
  * to a property on a node which represents a typed language element.
  */
-public class Es6TypeDeclarations implements HotSwapCompilerPass {
+public class Es6TypeDeclarations extends AbstractPostOrderCallback implements HotSwapCompilerPass {
 
   private final AbstractCompiler compiler;
 
@@ -43,39 +41,37 @@ public class Es6TypeDeclarations implements HotSwapCompilerPass {
 
   @Override
   public void hotSwapScript(Node scriptRoot, Node originalRoot) {
-    new NodeTraversal(compiler, new Es6TypesCallback()).traverse(scriptRoot);
+    NodeTraversal.traverse(compiler, scriptRoot, this);
   }
 
-  private class Es6TypesCallback extends AbstractPostOrderCallback {
-    @Override
-    public void visit(NodeTraversal t, Node n, Node parent) {
-      switch (n.getType()) {
-        case Token.FUNCTION:
-          JSDocInfo bestJSDocInfo = NodeUtil.getBestJSDocInfo(n);
-          if (bestJSDocInfo != null) {
-            n.putProp(DECLARED_TYPE_EXPR, bestJSDocInfo.getReturnType());
-          }
+  @Override
+  public void visit(NodeTraversal t, Node n, Node parent) {
+    switch (n.getType()) {
+      case Token.FUNCTION:
+        JSDocInfo bestJSDocInfo = NodeUtil.getBestJSDocInfo(n);
+        if (bestJSDocInfo != null) {
+          n.setJSTypeExpression(bestJSDocInfo.getReturnType());
+        }
+        break;
+      case Token.NAME:
+        if (parent == null) {
           break;
-        case Token.NAME:
-          if (parent == null) {
-            break;
-          }
-          JSDocInfo parentJSDoc = NodeUtil.getBestJSDocInfo(parent);
-          if (parentJSDoc == null) {
-            break;
-          }
-          if (parent.isVar()) {
-            n.putProp(DECLARED_TYPE_EXPR, parentJSDoc.getType());
-          } else if (parent.isParamList()) {
-            JSTypeExpression parameterType = parentJSDoc.getParameterType(n.getString());
-            if (parameterType != null) {
-              n.putProp(DECLARED_TYPE_EXPR, parameterType);
-            }
-          }
+        }
+        JSDocInfo parentJSDoc = NodeUtil.getBestJSDocInfo(parent);
+        if (parentJSDoc == null) {
           break;
-        default:
-          break;
-      }
+        }
+        if (parent.isVar()) {
+          n.setJSTypeExpression(parentJSDoc.getType());
+        } else if (parent.isParamList()) {
+          JSTypeExpression parameterType = parentJSDoc.getParameterType(n.getString());
+          if (parameterType != null) {
+            n.setJSTypeExpression(parameterType);
+          }
+        }
+        break;
+      default:
+        break;
     }
   }
 }

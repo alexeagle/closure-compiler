@@ -2041,8 +2041,17 @@ public class Node implements Cloneable, Serializable {
    * Sets the {@link JSDocInfo} attached to this node.
    */
   public Node setJSDocInfo(JSDocInfo info) {
-      putProp(JSDOC_INFO_PROP, info);
-      return this;
+    putProp(JSDOC_INFO_PROP, info);
+    return this;
+  }
+
+  public JSTypeExpression getJSTypeExpression() {
+    return
+  }
+
+  public Node setJSTypeExpression(JSTypeExpression jsTypeExpression) {
+    putProp(DECLARED_TYPE_EXPR, jsTypeExpression);
+    return this;
   }
 
   /** This node was last changed at {@code time} */
