@@ -1035,7 +1035,7 @@ class CodeGenerator {
   }
 
   private void addTypeExpr(Node n) {
-    if (n.getProp(Node.DECLARED_TYPE_EXPR) != null) {
+    if (n.getJSTypeExpression() != null) {
       String inlineType = toInlineTypeExpr(n.getJSTypeExpression());
       if (inlineType != null) {
         add(inlineType);
