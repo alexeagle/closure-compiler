@@ -2046,7 +2046,7 @@ public class Node implements Cloneable, Serializable {
   }
 
   public JSTypeExpression getJSTypeExpression() {
-    return
+    return (JSTypeExpression) getProp(DECLARED_TYPE_EXPR);
   }
 
   public Node setJSTypeExpression(JSTypeExpression jsTypeExpression) {
