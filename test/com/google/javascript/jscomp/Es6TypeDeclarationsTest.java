@@ -52,8 +52,7 @@ public class Es6TypeDeclarationsTest extends TestCase {
         NodeTraversal.traverse(compiler, root, visitor);
         assertWithMessage("Did not find a node named " + identifier + " in " + root.toStringTree())
             .that(visitor.foundNode).isNotNull();
-        JSTypeExpression declaredType =
-            (JSTypeExpression) visitor.foundNode.getProp(Node.DECLARED_TYPE_EXPR);
+        JSTypeExpression declaredType = visitor.foundNode.getJSTypeExpression();
         assertWithMessage(identifier + " missing DECLARED_TYPE_EXPR in " + root.toStringTree())
             .that(declaredType).isNotNull();
 
