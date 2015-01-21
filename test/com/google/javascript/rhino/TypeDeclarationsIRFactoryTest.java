@@ -1,0 +1,205 @@
+package com.google.javascript.rhino;
+
+import com.google.common.truth.FailureStrategy;
+import com.google.common.truth.Subject;
+import com.google.javascript.jscomp.parsing.JsDocInfoParser;
+import junit.framework.TestCase;
+
+import javax.annotation.CheckReturnValue;
+import java.util.LinkedHashMap;
+
+import static com.google.common.truth.Truth.THROW_ASSERTION_ERROR;
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.javascript.rhino.Node.NULLABLE_TYPE;
+import static com.google.javascript.rhino.Node.TypeDeclarationNode;
+import static com.google.javascript.rhino.Token.ANY_TYPE;
+import static com.google.javascript.rhino.Token.BOOLEAN_TYPE;
+import static com.google.javascript.rhino.Token.FUNCTION_TYPE;
+import static com.google.javascript.rhino.Token.NAMED_TYPE;
+import static com.google.javascript.rhino.Token.NULL_TYPE;
+import static com.google.javascript.rhino.Token.NUMBER_TYPE;
+import static com.google.javascript.rhino.Token.OBJECTLIT;
+import static com.google.javascript.rhino.Token.PARAMETERIZED_TYPE;
+import static com.google.javascript.rhino.Token.REST_PARAMETER_TYPE;
+import static com.google.javascript.rhino.Token.STRING_TYPE;
+import static com.google.javascript.rhino.Token.UNKNOWN_TYPE;
+import static com.google.javascript.rhino.Token.VOID_TYPE;
+import static com.google.javascript.rhino.TypeDeclarationsIRFactory.booleanType;
+import static com.google.javascript.rhino.TypeDeclarationsIRFactory.namedType;
+import static com.google.javascript.rhino.TypeDeclarationsIRFactory.nullType;
+import static com.google.javascript.rhino.TypeDeclarationsIRFactory.numberType;
+import static com.google.javascript.rhino.TypeDeclarationsIRFactory.parameterizedType;
+import static com.google.javascript.rhino.TypeDeclarationsIRFactory.recordType;
+import static com.google.javascript.rhino.TypeDeclarationsIRFactory.stringType;
+import static com.google.javascript.rhino.TypeDeclarationsIRFactory.unionType;
+import static com.google.javascript.rhino.TypeDeclarationsIRFactory.unknownType;
+import static java.util.Arrays.asList;
+
+public class TypeDeclarationsIRFactoryTest extends TestCase {
+
+  public void testConvertSimpleTypes() {
+    assertParseTypeAndConvert("*").hasType(UNKNOWN_TYPE);
+    assertParseTypeAndConvert("?").hasType(ANY_TYPE);
+    assertParseTypeAndConvert("boolean").hasType(BOOLEAN_TYPE);
+    assertParseTypeAndConvert("null").hasType(NULL_TYPE);
+    assertParseTypeAndConvert("number").hasType(NUMBER_TYPE);
+    assertParseTypeAndConvert("string").hasType(STRING_TYPE);
+    assertParseTypeAndConvert("void").hasType(VOID_TYPE);
+    assertParseTypeAndConvert("undefined").hasType(UNKNOWN_TYPE);
+  }
+
+  public void testConvertNamedTypes() throws Exception {
+    assertParseTypeAndConvert("Window")
+        .isEqualTo(namedType("Window"));
+    assertParseTypeAndConvert("goog.ui.Menu")
+        .isEqualTo(namedType("goog.ui.Menu"));
+
+    assertNode(namedType("goog.ui.Menu"))
+        .isEqualTo(new TypeDeclarationNode(NAMED_TYPE,
+            IR.getprop(IR.getprop(IR.name("goog"), IR.string("ui")), IR.string("Menu"))));
+  }
+
+  public void testConvertTypeApplication() throws Exception {
+    assertParseTypeAndConvert("Array.<string>")
+        .isEqualTo(parameterizedType(namedType("Array"), asList(stringType())));
+    assertParseTypeAndConvert("Object.<string, number>")
+        .isEqualTo(parameterizedType(namedType("Object"), asList(stringType(), numberType())));
+
+    assertNode(parameterizedType(namedType("Array"), asList(stringType())))
+        .isEqualTo(new TypeDeclarationNode(PARAMETERIZED_TYPE,
+            new TypeDeclarationNode(NAMED_TYPE, IR.name("Array")),
+            new TypeDeclarationNode(STRING_TYPE)));
+  }
+
+  public void testConvertTypeUnion() throws Exception {
+    assertParseTypeAndConvert("(number|boolean)")
+        .isEqualTo(unionType(numberType(), booleanType()));
+  }
+
+  public void testConvertRecordType() throws Exception {
+    LinkedHashMap<String, TypeDeclarationNode> properties = new LinkedHashMap<>();
+    properties.put("myNum", numberType());
+    properties.put("myObject", unknownType());
+
+    assertParseTypeAndConvert("{myNum: number, myObject}")
+        .isEqualTo(recordType(properties));
+  }
+
+  public void testCreateRecordType() throws Exception {
+    LinkedHashMap<String, TypeDeclarationNode> properties = new LinkedHashMap<>();
+    properties.put("myNum", numberType());
+    properties.put("myObject", unknownType());
+    TypeDeclarationNode node = recordType(properties);
+
+    Node key1 = IR.stringKey("myNum");
+    key1.addChildToFront(new TypeDeclarationNode(NUMBER_TYPE));
+    Node key2 = IR.stringKey("myObject");
+    key2.addChildToFront(new TypeDeclarationNode(UNKNOWN_TYPE));
+
+    assertNode(node)
+        .isEqualTo(new TypeDeclarationNode(OBJECTLIT, key1, key2));
+  }
+
+  public void testConvertRecordTypeWithTypeApplication() throws Exception {
+    Node key = IR.stringKey("length");
+    key.addChildToFront(unknownType());
+    assertParseTypeAndConvert("Array.<{length}>")
+        .isEqualTo(new TypeDeclarationNode(PARAMETERIZED_TYPE, namedType("Array"), new TypeDeclarationNode(OBJECTLIT, key)));
+  }
+
+  public void testConvertNullableType() throws Exception {
+    assertParseTypeAndConvert("?number")
+        .isEqualTo(unionType(nullType(), numberType()));
+  }
+
+  public void testConvertNonNullableType() throws Exception {
+    assertParseTypeAndConvert("!Object")
+        .isEqualTo(namedType("Object")).and()
+        .hasBooleanProperty(NULLABLE_TYPE, false);
+  }
+
+  public void testConvertFunctionType() throws Exception {
+    Node stringKey = IR.stringKey("p1");
+    stringKey.addChildToFront(stringType());
+    Node stringKey1 = IR.stringKey("p2");
+    stringKey1.addChildToFront(booleanType());
+    assertParseTypeAndConvert("function(string, boolean)")
+        .isEqualTo(new TypeDeclarationNode(FUNCTION_TYPE, unknownType(), stringKey, stringKey1));
+  }
+
+  public void testConvertFunctionReturnType() throws Exception {
+    assertParseTypeAndConvert("function(): number")
+        .isEqualTo(new TypeDeclarationNode(FUNCTION_TYPE, numberType()));
+  }
+
+  public void testConvertFunctionThisType() throws Exception {
+    Node stringKey1 = IR.stringKey("p1");
+    stringKey1.addChildToFront(stringType());
+    assertParseTypeAndConvert("function(this:goog.ui.Menu, string)")
+        .isEqualTo(new TypeDeclarationNode(FUNCTION_TYPE, unknownType(), stringKey1));
+  }
+
+  public void testConvertFunctionNewType() throws Exception {
+    Node stringKey1 = IR.stringKey("p1");
+    stringKey1.addChildToFront(stringType());
+    assertParseTypeAndConvert("function(new:goog.ui.Menu, string)")
+        .isEqualTo(new TypeDeclarationNode(FUNCTION_TYPE, unknownType(), stringKey1));
+  }
+
+  public void testConvertVariableParameters() throws Exception {
+    Node stringKey1 = IR.stringKey("p1");
+    stringKey1.addChildToFront(stringType());
+    Node stringKey2 = IR.stringKey("p2");
+    stringKey2.addChildToFront(new TypeDeclarationNode(REST_PARAMETER_TYPE, numberType()));
+    assertParseTypeAndConvert("function(string, ...number): number")
+        .isEqualTo(new TypeDeclarationNode(FUNCTION_TYPE, numberType(), stringKey1, stringKey2));
+  }
+
+  private NodeSubject assertNode(final Node node) {
+    return new NodeSubject(THROW_ASSERTION_ERROR, node);
+  }
+
+  private NodeSubject assertParseTypeAndConvert(final String typeExpr) {
+    Node oldAST = JsDocInfoParser.parseTypeString(typeExpr);
+    if (oldAST == null) {
+      fail(typeExpr + " did not produce a parsed AST");
+    }
+    return new NodeSubject(THROW_ASSERTION_ERROR,
+        TypeDeclarationsIRFactory.convertTypeNodeAST(oldAST));
+  }
+
+  private class NodeSubject extends Subject<NodeSubject, Node> {
+    public NodeSubject(FailureStrategy failureStrategy, Node subject) {
+      super(failureStrategy, subject);
+    }
+
+    public And isEqualTo(Node node) {
+      String treeDiff = node.checkTreeEquals(getSubject());
+      if (treeDiff != null) {
+        failWithRawMessage("%s", treeDiff);
+      }
+      return new And(this);
+    }
+
+    public void hasType(int tokenType) {
+      assertThat(getSubject().getType()).is(tokenType);
+    }
+
+    public void hasBooleanProperty(int property, boolean value) {
+      assertThat(getSubject().getBooleanProp(property)).isEqualTo(value);
+    }
+
+    private class And {
+      private NodeSubject nodeSubject;
+
+      public And(NodeSubject nodeSubject) {
+        this.nodeSubject = nodeSubject;
+      }
+
+      @CheckReturnValue
+      public NodeSubject and() {
+        return nodeSubject;
+      }
+    }
+  }
+}

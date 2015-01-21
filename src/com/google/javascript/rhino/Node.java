@@ -127,9 +127,10 @@ public class Node implements Cloneable, Serializable {
                                   // GlobalTypeInfo and NewTypeInference.
                                   // We use this to tag getprop nodes that
                                   // declare properties.
-      DECLARED_TYPE_EXPR = 77;    // Used to attach JSTypeExpression objects to
+      DECLARED_TYPE_EXPR = 77,    // Used to attach JSTypeExpression objects to
                                   // Nodes which represent a typed NAME or
                                   // FUNCTION.
+      NULLABLE_TYPE = 80;
 
 
   public static final int   // flags for INCRDECR_PROP
@@ -180,9 +181,31 @@ public class Node implements Cloneable, Serializable {
         case ANALYZED_DURING_GTI:  return "analyzed_during_gti";
         case CONSTANT_PROPERTY_DEF: return "constant_property_def";
         case DECLARED_TYPE_EXPR: return "declared_type_expr";
+        case NULLABLE_TYPE : return "nullable_type";
         default:
           throw new IllegalStateException("unexpected prop id " + propType);
       }
+  }
+
+  public static class TypeDeclarationNode extends Node {
+
+    private static final long serialVersionUID = 1L;
+
+    public TypeDeclarationNode(int nodeType) {
+      super(nodeType);
+    }
+
+    public TypeDeclarationNode(int nodeType, Node child) {
+      super(nodeType, child);
+    }
+
+    public TypeDeclarationNode(int nodeType, Node left, Node right) {
+      super(nodeType, left, right);
+    }
+
+    public TypeDeclarationNode(int nodeType, Node left, Node mid, Node right) {
+      super(nodeType, left, mid, right);
+    }
   }
 
   private static class NumberNode extends Node {
@@ -782,7 +805,7 @@ public class Node implements Cloneable, Serializable {
 
   public void replaceChildAfter(Node prevChild, Node newChild) {
     Preconditions.checkArgument(prevChild.parent == this,
-      "prev is not a child of this node.");
+        "prev is not a child of this node.");
 
     Preconditions.checkArgument(newChild.next == null,
         "The new child node has siblings.");
