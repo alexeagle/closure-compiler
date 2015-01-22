@@ -129,9 +129,9 @@ public class TypescriptTypesTest extends CompilerTestCase {
             ";");
   }
 
-  public void testAnyType() throws Exception {
+  public void testStarType() throws Exception {
     assertSource("/** @type {*} */ var n;")
-        .transpilesTo("var n;");
+        .transpilesTo("var n: Object | number | string | boolean | null | undefined;");
   }
 
   public void testUnknownType() throws Exception {
@@ -141,7 +141,7 @@ public class TypescriptTypesTest extends CompilerTestCase {
 
   public void testUndefinedType() throws Exception {
     assertSource("/** @type {undefined} */ var n;")
-        .transpilesTo("var n;");
+        .transpilesTo("var n: undefined;");
   }
 
   public void testNullType() throws Exception {

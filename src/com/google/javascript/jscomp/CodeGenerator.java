@@ -1082,6 +1082,8 @@ class CodeGenerator {
         result.append(toInlineTypeExpr(root.getFirstChild()));
         break;
       case Token.VOID_TYPE:
+        result.append("undefined");
+        break;
       case Token.ANY_TYPE:
         return null;
       case Token.STRING_KEY:
@@ -1127,7 +1129,7 @@ class CodeGenerator {
         result.append(") => ");
         result.append(toInlineTypeExpr(returnType));
         break;
-      case Token.OBJECTLIT:
+      case Token.RECORD_TYPE:
         result.append("{");
         first = true;
         while (children.hasNext()) {
