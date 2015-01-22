@@ -21,6 +21,9 @@ import com.google.javascript.rhino.JSDocInfo;
 import com.google.javascript.rhino.JSTypeExpression;
 import com.google.javascript.rhino.Node;
 import com.google.javascript.rhino.Token;
+import com.google.javascript.rhino.TypeDeclarationsIRFactory;
+
+import static com.google.javascript.rhino.TypeDeclarationsIRFactory.convert;
 
 /**
  * Copies type declarations from the JSDoc (possibly of a parent node)
@@ -50,7 +53,7 @@ public class Es6TypeDeclarations extends AbstractPostOrderCallback implements Ho
       case Token.FUNCTION:
         JSDocInfo bestJSDocInfo = NodeUtil.getBestJSDocInfo(n);
         if (bestJSDocInfo != null) {
-          n.setJSTypeExpression(bestJSDocInfo.getReturnType());
+          n.setDeclaredTypeExpression(convert(bestJSDocInfo.getReturnType()));
         }
         break;
       case Token.NAME:
@@ -62,11 +65,11 @@ public class Es6TypeDeclarations extends AbstractPostOrderCallback implements Ho
           break;
         }
         if (parent.isVar()) {
-          n.setJSTypeExpression(parentJSDoc.getType());
+          n.setDeclaredTypeExpression(convert(parentJSDoc.getType()));
         } else if (parent.isParamList()) {
           JSTypeExpression parameterType = parentJSDoc.getParameterType(n.getString());
           if (parameterType != null) {
-            n.setJSTypeExpression(parameterType);
+            n.setDeclaredTypeExpression(convert(parameterType));
           }
         }
         break;

@@ -115,7 +115,7 @@ public class TypescriptTypesTest extends CompilerTestCase {
         "/** @param {!number} n @return {?string}*/",
         "function s(n) { return ''; };")
         .transpilesTo(
-            "function s(n: number): string {",
+            "function s(n: number): null | string {",
             "  return '';",
             "}",
             ";");
@@ -136,7 +136,7 @@ public class TypescriptTypesTest extends CompilerTestCase {
 
   public void testUnknownType() throws Exception {
     assertSource("/** @type {?} */ var n;")
-        .transpilesTo("var n: any;");
+        .transpilesTo("var n;");
   }
 
   public void testUndefinedType() throws Exception {
@@ -146,7 +146,7 @@ public class TypescriptTypesTest extends CompilerTestCase {
 
   public void testNullType() throws Exception {
     assertSource("/** @type {null} */ var n;")
-        .transpilesTo("var n;");
+        .transpilesTo("var n: null;");
   }
 
   public void testFunctionType() throws Exception {
@@ -154,10 +154,9 @@ public class TypescriptTypesTest extends CompilerTestCase {
         .transpilesTo("var n: (p1: string, p2: number) => boolean;");
   }
 
-  // Sadly TypeScript doesn't understand union types so this is just lost
   public void testTypeUnion() throws Exception {
     assertSource("/** @type {(number|boolean)} */ var n;")
-        .transpilesTo("var n;");
+        .transpilesTo("var n: number | boolean;");
   }
 
   public void testArrayType() throws Exception {

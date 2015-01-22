@@ -5,6 +5,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -239,6 +240,13 @@ public class TypeDeclarationsIRFactory {
           return convertTypeNodeAST(node);
         }
       };
+
+  public static TypeDeclarationNode convert(@Nullable JSTypeExpression typeExpr) {
+    if (typeExpr == null) {
+      return anyType();
+    }
+    return convertTypeNodeAST(typeExpr.getRoot());
+  }
 
   /**
    * The root of a JSTypeExpression is very different from an AST node, even

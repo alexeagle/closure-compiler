@@ -127,7 +127,7 @@ public class Node implements Cloneable, Serializable {
                                   // GlobalTypeInfo and NewTypeInference.
                                   // We use this to tag getprop nodes that
                                   // declare properties.
-      DECLARED_TYPE_EXPR = 77,    // Used to attach JSTypeExpression objects to
+      DECLARED_TYPE_EXPR = 77,    // Used to attach TypeDeclarationNode ASTs to
                                   // Nodes which represent a typed NAME or
                                   // FUNCTION.
       NULLABLE_TYPE = 80;
@@ -2068,12 +2068,12 @@ public class Node implements Cloneable, Serializable {
     return this;
   }
 
-  public JSTypeExpression getJSTypeExpression() {
-    return (JSTypeExpression) getProp(DECLARED_TYPE_EXPR);
+  public TypeDeclarationNode getDeclaredTypeExpression() {
+    return (TypeDeclarationNode) getProp(DECLARED_TYPE_EXPR);
   }
 
-  public Node setJSTypeExpression(JSTypeExpression jsTypeExpression) {
-    putProp(DECLARED_TYPE_EXPR, jsTypeExpression);
+  public Node setDeclaredTypeExpression(TypeDeclarationNode typeExpression) {
+    putProp(DECLARED_TYPE_EXPR, typeExpression);
     return this;
   }
 

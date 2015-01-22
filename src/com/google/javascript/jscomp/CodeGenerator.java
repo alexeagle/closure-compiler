@@ -21,7 +21,6 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.javascript.jscomp.CompilerOptions.LanguageMode;
-import com.google.javascript.rhino.JSTypeExpression;
 import com.google.javascript.rhino.Node;
 import com.google.javascript.rhino.Token;
 import com.google.javascript.rhino.TokenStream;
@@ -30,6 +29,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -1035,108 +1035,110 @@ class CodeGenerator {
   }
 
   private void addTypeExpr(Node n) {
-    if (n.getJSTypeExpression() != null) {
-      String inlineType = toInlineTypeExpr(n.getJSTypeExpression());
+    if (n.getDeclaredTypeExpression() != null) {
+      String inlineType = toInlineTypeExpr(n.getDeclaredTypeExpression());
       if (inlineType != null) {
         add(inlineType);
       }
     }
   }
 
-  /**
-   * @param typeExpr a JSTypeExpression
-   * @return the equivalent inline type representation (with the leading colon)
-   *     or null if there is no type information to append.
-   */
-  @Nullable
-  private String toInlineTypeExpr(JSTypeExpression typeExpr) {
-    Node root = typeExpr.getRoot();
-    return toInlineTypeExpr(root);
-  }
-
   @Nullable
   private String toInlineTypeExpr(Node root) {
     StringBuilder result = new StringBuilder();
-
     if (root.getParent() == null) {
-      if (root.getType() == Token.EQUALS) {
+      if (root.getType() == Token.OPTIONAL_PARAMETER) {
         result.append("?");
       }
       result.append(": ");
     }
 
+    Iterator<Node> children = root.children().iterator();
+    boolean first;
     switch (root.getType()) {
-      // TypeScript 1.3 doesn't have any means to express a union type so these are just dropped.
-      // TODO(alexeagle): add support for the new union operator in 1.4
-      case Token.PIPE:
-      // There is no equivalent of Closure's definition of the "any" type.
-      case Token.STAR:
+      case Token.STRING_TYPE:
+        result.append("string");
+        break;
+      case Token.NUMBER_TYPE:
+        result.append("number");
+        break;
+      case Token.BOOLEAN_TYPE:
+        result.append("boolean");
+        break;
+      case Token.NULL_TYPE:
+        result.append("null");
+        break;
+      case Token.GETPROP:
+        result.append(toInlineTypeExpr(root.getFirstChild()))
+            .append(".").append(toInlineTypeExpr(root.getLastChild()));
+        break;
+      case Token.NAME:
+      case Token.STRING:
+        result.append(root.getString());
+        break;
+      case Token.NAMED_TYPE:
+        result.append(toInlineTypeExpr(root.getFirstChild()));
+        break;
+      case Token.VOID_TYPE:
+      case Token.ANY_TYPE:
         return null;
+      case Token.STRING_KEY:
+        result.append(root.getString());
+        String type = toInlineTypeExpr(root.getFirstChild());
+        if (type != null) {
+          result.append(": ").append(type);
+        }
+        break;
+      case Token.OPTIONAL_PARAMETER:
+        result.append(toInlineTypeExpr(root.getFirstChild()));
+        break;
+      case Token.PARAMETERIZED_TYPE:
+        String baseType = toInlineTypeExpr(children.next());
 
-      // Throw away nullable modifier
-      // TODO(alexeagle): if Typescript adds support for nullable types
-      // then we should emit that here.
-      case Token.BANG:
-      case Token.EQUALS:
-        return result.append(toInlineTypeExpr(root.getLastChild())).toString();
+        if (baseType.equals("Array")) {
 
-      case Token.LC:
+          result.append(toInlineTypeExpr(children.next()))
+              .append("[]");
+        }
+        break;
+      case Token.UNION_TYPE:
+        first = true;
+        for (Node typeOption : root.children()) {
+          if (!first) {
+            result.append(" | ");
+          }
+          result.append(toInlineTypeExpr(typeOption));
+          first = false;
+        }
+        break;
+      case Token.FUNCTION_TYPE:
+        Node returnType = children.next();
+        result.append("(");
+        first = true;
+        while (children.hasNext()) {
+          if (!first) {
+            result.append(", ");
+          }
+          result.append(toInlineTypeExpr(children.next()));
+          first = false;
+        }
+        result.append(") => ");
+        result.append(toInlineTypeExpr(returnType));
+        break;
+      case Token.OBJECTLIT:
         result.append("{");
-        boolean first = true;
-        for (Node property : root.getFirstChild().children()) {
+        first = true;
+        while (children.hasNext()) {
           if (!first) {
             result.append("; ");
           }
-          if (property.getType() == Token.COLON) {
-            result.append(property.getFirstChild().getString())
-                .append(": ")
-                .append(property.getLastChild().getString());
-          } else {
-            result.append(property.getString());
-          }
+          result.append(toInlineTypeExpr(children.next()));
           first = false;
         }
         result.append("}");
         break;
-
-      case Token.STRING:
-        if (root.getString().equals("undefined") || root.getString().equals("null")) {
-          return null;
-        }
-        if (root.getString().equals("Array")) {
-          // AST is eg. STRING Array > BLOCK > STRING string
-          result.append(toInlineTypeExpr(root.getLastChild().getFirstChild()))
-              .append("[]");
-        } else {
-          result.append(root.getString());
-        }
-        break;
-
-      case Token.QMARK:
-        if (root.hasChildren()) {
-          result.append(toInlineTypeExpr(root.getFirstChild()));
-        } else {
-          result.append("any");
-        }
-        break;
-
-      case Token.FUNCTION:
-        result.append("(");
-        int paramIdx = 1;
-        for (Node param : root.getFirstChild().children()) {
-          if (paramIdx > 1) {
-            result.append(", ");
-          }
-          result.append("p").append(paramIdx).append(": ")
-              .append(toInlineTypeExpr(param));
-          paramIdx++;
-
-        }
-        result.append(") => ").append(root.getLastChild().getString());
-        break;
-
       default:
-        break;
+        throw new RuntimeException("Don't understand node type " + root.toString());
     }
     return result.toString();
   }

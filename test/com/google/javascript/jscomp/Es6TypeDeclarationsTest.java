@@ -6,31 +6,37 @@ import com.google.common.truth.Subject;
 import com.google.common.truth.SubjectFactory;
 import com.google.javascript.rhino.JSTypeExpression;
 import com.google.javascript.rhino.Node;
-import com.google.javascript.rhino.Token;
+import com.google.javascript.rhino.TypeDeclarationsIRFactory;
 import junit.framework.TestCase;
+
+import javax.annotation.CheckReturnValue;
 
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static com.google.javascript.rhino.Node.TypeDeclarationNode;
+import static com.google.javascript.rhino.TypeDeclarationsIRFactory.booleanType;
+import static com.google.javascript.rhino.TypeDeclarationsIRFactory.numberType;
+import static com.google.javascript.rhino.TypeDeclarationsIRFactory.stringType;
 
 public class Es6TypeDeclarationsTest extends TestCase {
 
   public void testVar() throws Exception {
     assertAbout(compile("/** @type {string} */ var s;"))
-        .that("s").hasType("string");
+        .that("s").hasType(stringType());
   }
 
   public void testFunction() throws Exception {
     assertAbout(compile("/** @return {boolean} */ function b(){}"))
-        .that("b").hasType("boolean");
+        .that("b").hasType(booleanType());
   }
 
   public void testFunctionParameters() throws Exception {
     assertAbout(compile("/** @param {number} n @param {string} s */ function t(n,s){}"))
-        .that("n").hasType("number");
+        .that("n").hasType(numberType());
   }
 
-  public SubjectFactory<JSTypeExprSubject, String> compile(String js) {
+  public SubjectFactory<TypeExprSubject, String> compile(String js) {
     final Compiler compiler = new Compiler();
 
     SourceFile input = SourceFile.fromCode("js", js);
@@ -44,34 +50,34 @@ public class Es6TypeDeclarationsTest extends TestCase {
         compiler.getRoot().getFirstChild(),
         compiler.getRoot().getLastChild());
 
-    return new SubjectFactory<JSTypeExprSubject, String>() {
+    return new SubjectFactory<TypeExprSubject, String>() {
       @Override
-      public JSTypeExprSubject getSubject(FailureStrategy failureStrategy, String identifier) {
+      public TypeExprSubject getSubject(FailureStrategy failureStrategy, String identifier) {
         FindNode visitor = new FindNode(identifier);
         Node root = compiler.getRoot().getLastChild();
         NodeTraversal.traverse(compiler, root, visitor);
         assertWithMessage("Did not find a node named " + identifier + " in " + root.toStringTree())
             .that(visitor.foundNode).isNotNull();
-        JSTypeExpression declaredType = visitor.foundNode.getJSTypeExpression();
+        TypeDeclarationNode declaredType = visitor.foundNode.getDeclaredTypeExpression();
         assertWithMessage(identifier + " missing DECLARED_TYPE_EXPR in " + root.toStringTree())
             .that(declaredType).isNotNull();
 
-        return new JSTypeExprSubject(failureStrategy, identifier, declaredType);
+        return new TypeExprSubject(failureStrategy, identifier, declaredType);
       }
     };
   }
 
-  private class JSTypeExprSubject extends Subject<JSTypeExprSubject, String> {
-    private final JSTypeExpression typeExpr;
+  private class TypeExprSubject extends Subject<TypeExprSubject, String> {
+    private final TypeDeclarationNode typeExpr;
 
-    public JSTypeExprSubject(FailureStrategy fs, String identifier, JSTypeExpression typeExpr) {
+    public TypeExprSubject(FailureStrategy fs, String identifier, TypeDeclarationNode typeExpr) {
       super(fs, identifier);
       this.typeExpr = typeExpr;
     }
 
-    public void hasType(String type) {
+    public void hasType(TypeDeclarationNode type) {
       assertTrue(getSubject() + " is of type " + typeExpr + " not of type " + type,
-          Node.newString(type).isEquivalentTo(typeExpr.getRoot()));
+          type.isEquivalentTo(typeExpr));
     }
   }
 
