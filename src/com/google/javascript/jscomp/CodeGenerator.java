@@ -1081,10 +1081,11 @@ class CodeGenerator {
       case Token.NAMED_TYPE:
         result.append(toInlineTypeExpr(root.getFirstChild()));
         break;
-      case Token.VOID_TYPE:
+      case Token.UNDEFINED_TYPE:
         result.append("undefined");
         break;
       case Token.ANY_TYPE:
+      case Token.VOID_TYPE:
         return null;
       case Token.STRING_KEY:
         result.append(root.getString());

@@ -1,23 +1,19 @@
 package com.google.javascript.jscomp;
 
+import static com.google.common.truth.Truth.assertAbout;
+import static com.google.common.truth.Truth.assertWithMessage;
+import static com.google.javascript.rhino.Node.TypeDeclarationNode;
+import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.booleanType;
+import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.numberType;
+import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.stringType;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.Subject;
 import com.google.common.truth.SubjectFactory;
-import com.google.javascript.rhino.JSTypeExpression;
 import com.google.javascript.rhino.Node;
-import com.google.javascript.rhino.TypeDeclarationsIRFactory;
+
 import junit.framework.TestCase;
-
-import javax.annotation.CheckReturnValue;
-
-import static com.google.common.truth.Truth.assertAbout;
-import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth.assertWithMessage;
-import static com.google.javascript.rhino.Node.TypeDeclarationNode;
-import static com.google.javascript.rhino.TypeDeclarationsIRFactory.booleanType;
-import static com.google.javascript.rhino.TypeDeclarationsIRFactory.numberType;
-import static com.google.javascript.rhino.TypeDeclarationsIRFactory.stringType;
 
 public class Es6TypeDeclarationsTest extends TestCase {
 

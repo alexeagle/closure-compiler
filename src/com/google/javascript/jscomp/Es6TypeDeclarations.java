@@ -16,14 +16,14 @@
 
 package com.google.javascript.jscomp;
 
+import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.convert;
+
 import com.google.javascript.jscomp.NodeTraversal.AbstractPostOrderCallback;
 import com.google.javascript.rhino.JSDocInfo;
 import com.google.javascript.rhino.JSTypeExpression;
 import com.google.javascript.rhino.Node;
 import com.google.javascript.rhino.Token;
-import com.google.javascript.rhino.TypeDeclarationsIRFactory;
 
-import static com.google.javascript.rhino.TypeDeclarationsIRFactory.convert;
 
 /**
  * Copies type declarations from the JSDoc (possibly of a parent node)
