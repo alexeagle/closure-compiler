@@ -68,6 +68,13 @@ public class TypeDeclarationsIRFactory {
   }
 
   /**
+   * @return a new node representing the Undefined type as defined by TypeScript.
+   */
+  public static TypeDeclarationNode undefinedType() {
+    return new TypeDeclarationNode(Token.UNDEFINED_TYPE);
+  }
+
+  /**
    * Produces a tree structure similar to the Rhino AST of a qualified name expression, under
    * a top-level NAMED_TYPE node.
    *
@@ -261,7 +268,8 @@ public class TypeDeclarationsIRFactory {
     switch (token) {
       case Token.STAR:
         return unionType(
-            namedType("Object"), numberType(), stringType(), booleanType(), nullType(), voidType());
+            namedType("Object"), numberType(), stringType(),
+            booleanType(), nullType(), undefinedType());
       case Token.VOID:
         return voidType();
       case Token.EMPTY: // for function types that don't declare a return type
@@ -281,6 +289,7 @@ public class TypeDeclarationsIRFactory {
           case "string":
             return stringType();
           case "undefined":
+            return undefinedType();
           case "void":
             return voidType();
           default:
