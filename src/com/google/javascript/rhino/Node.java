@@ -928,6 +928,18 @@ public class Node implements Cloneable, Serializable {
     }
   }
 
+  public void setDeclaredTypeExpression(/** fixme: TypeDeclaration*/Node typeExpression) {
+    putProp(DECLARED_TYPE_EXPR, typeExpression);
+  }
+
+  /**
+   * Returns the syntactical type specified on this node. Not to be confused
+   * with {@link #getJSType()} which returns the compiler-inferred type.
+   */
+  public TypeDeclarationNode getDeclaredTypeExpression() {
+    return (TypeDeclarationNode) getProp(DECLARED_TYPE_EXPR);
+  }
+
   PropListItem createProp(int propType, Object value, PropListItem next) {
     return new ObjectPropListItem(propType, value, next);
   }
@@ -2015,6 +2027,11 @@ public class Node implements Cloneable, Serializable {
   //==========================================================================
   // Custom annotations
 
+  /**
+   * Returns the compiled inferred type on this node. Not to be confused
+   * with {@link #getJSTypeExpression()} which returns the syntactically
+   * specified type.
+   */
   public JSType getJSType() {
     return (JSType) typei;
   }
@@ -2074,15 +2091,6 @@ public class Node implements Cloneable, Serializable {
    */
   public Node setJSDocInfo(JSDocInfo info) {
     putProp(JSDOC_INFO_PROP, info);
-    return this;
-  }
-
-  public TypeDeclarationNode getDeclaredTypeExpression() {
-    return (TypeDeclarationNode) getProp(DECLARED_TYPE_EXPR);
-  }
-
-  public Node setDeclaredTypeExpression(TypeDeclarationNode typeExpression) {
-    putProp(DECLARED_TYPE_EXPR, typeExpression);
     return this;
   }
 

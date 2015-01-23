@@ -199,7 +199,7 @@ public class Es6InlineTypesTest extends CompilerTestCase {
     }
 
     public void transpilesTo(String... lines) {
-      Truth.assertThat(doCompile(getSubject()).trim()).is(Joiner.on("\n").join(lines));
+      Truth.assertThat(doCompile(getSubject()).trim()).is("'use strict';" + Joiner.on("\n").join(lines));
     }
   }
 }

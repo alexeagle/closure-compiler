@@ -232,7 +232,6 @@ class CodeGenerator {
       case Token.NAME:
         addIdentifier(n.getString());
         addTypeExpr(n);
-
         if (first != null && !first.isEmpty()) {
           Preconditions.checkState(childCount == 1);
           cc.addOp("=", true);

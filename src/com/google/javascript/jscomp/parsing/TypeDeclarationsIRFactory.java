@@ -16,8 +16,6 @@
 
 package com.google.javascript.jscomp.parsing;
 
-import static com.google.javascript.rhino.Node.TypeDeclarationNode;
-
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
@@ -25,6 +23,7 @@ import com.google.common.collect.Iterables;
 import com.google.javascript.rhino.IR;
 import com.google.javascript.rhino.JSTypeExpression;
 import com.google.javascript.rhino.Node;
+import com.google.javascript.rhino.Node.TypeDeclarationNode;
 import com.google.javascript.rhino.Token;
 
 import java.util.Arrays;
@@ -96,6 +95,17 @@ public class TypeDeclarationsIRFactory {
   }
 
   /**
+   * Splits a '.' separated qualified name into a tree of type segments.
+   *
+   * @param typeName a qualified name such as "goog.ui.Window"
+   * @return a new node representing the type
+   * @see #namedType(Iterable)
+   */
+  public static TypeDeclarationNode namedType(String typeName) {
+    return namedType(Splitter.on('.').split(typeName));
+  }
+
+  /**
    * Produces a tree structure similar to the Rhino AST of a qualified name expression, under
    * a top-level NAMED_TYPE node.
    *
@@ -106,21 +116,12 @@ public class TypeDeclarationsIRFactory {
    *     STRING ui
    *       STRING Window
    * </pre>
-   *
-   * @param typeName a qualified name such as "goog.ui.Window"
-   * @return a new node representing the type
    */
-  public static TypeDeclarationNode namedType(String typeName) {
-    switch (typeName) {
-      case "string": return stringType();
-      case "boolean": return booleanType();
-      case "number": return numberType();
-      case "null": return nullType();
-    }
-    Iterator<String> parts = Splitter.on('.').split(typeName).iterator();
-    Node node = IR.name(parts.next());
-    while (parts.hasNext()) {
-      node = IR.getprop(node, IR.string(parts.next()));
+  public static TypeDeclarationNode namedType(Iterable<String> segments) {
+    Iterator<String> segmentsIt = segments.iterator();
+    Node node = IR.name(segmentsIt.next());
+    while (segmentsIt.hasNext()) {
+      node = IR.getprop(node, IR.string(segmentsIt.next()));
     }
     return new TypeDeclarationNode(Token.NAMED_TYPE, node);
   }
