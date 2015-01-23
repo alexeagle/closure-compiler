@@ -279,9 +279,10 @@ public class TypeDeclarationsIRFactory {
         }
       };
 
+  @Nullable
   public static TypeDeclarationNode convert(@Nullable JSTypeExpression typeExpr) {
     if (typeExpr == null) {
-      return anyType();
+      return null;
     }
     return convertTypeNodeAST(typeExpr.getRoot());
   }

@@ -83,7 +83,7 @@ public class Es6InlineTypesTest extends CompilerTestCase {
         "/** @param {number} n @param {string} s */",
         "function t(n,s){}")
         .transpilesTo(
-            "function t(n: number, s: string) {",
+            "function t(n: number, s: string): any {",
             "}",
             ";");
   }

@@ -1091,8 +1091,6 @@ class CodeGenerator {
       case Token.VOID_TYPE:
         result.append("void");
         break;
-      case Token.UNKNOWN_TYPE:
-        return null;
       case Token.STRING_KEY:
         result.append(root.getString());
         String type = toInlineTypeExpr(root.getFirstChild());
