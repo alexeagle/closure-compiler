@@ -101,9 +101,7 @@ abstract class NewTypeSafeDispatcher<T> {
   abstract T processImportSpec(ImportSpecifierTree tree);
   abstract T processModuleImport(ModuleImportTree tree);
 
-  abstract T processTypeName(TypeNameTree tree);
   abstract T processTypedParameter(TypedParameterTree asTypeAnnotation);
-  abstract T processParameterizedType(ParameterizedTypeTree tree);
 
   abstract T processMissingExpression(MissingPrimaryExpressionTree tree);
 
@@ -289,12 +287,8 @@ abstract class NewTypeSafeDispatcher<T> {
       case ARGUMENT_LIST:
         break;
 
-      case TYPE_NAME:
-        return processTypeName(node.asTypeName());
       case TYPE_ANNOTATION:
         return processTypedParameter(node.asTypedParameter());
-      case PARAMETERIZED_TYPE_TREE:
-        return processParameterizedType(node.asParameterizedType());
 
       default:
         break;

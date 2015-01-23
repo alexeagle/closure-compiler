@@ -83,10 +83,4 @@ public class Es6InlineTypesTest extends CompilerTestCase {
   public void testUndefinedType() throws Exception {
     test("/** @type {undefined} */ var n;", "var n: undefined;");
   }
-
-  public void testArrayType() throws Exception {
-    test("/** @type {Array.<string>} */ var s;", "var s: string[];");
-    test("/** @type {!Array.<!$jscomp.typecheck.Checker>} */ var s;",
-        "var s: $jscomp.typecheck.Checker[];");
-  }
 }

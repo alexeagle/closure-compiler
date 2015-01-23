@@ -956,7 +956,7 @@ public class CompilerOptions implements Serializable, Cloneable {
     checkSymbols = false;
     aggressiveVarCheck = CheckLevel.OFF;
     checkSuspiciousCode = false;
-    checkTypes = true;
+    checkTypes = false;
     reportMissingOverride = CheckLevel.OFF;
     checkRequires = CheckLevel.OFF;
     checkProvides = CheckLevel.OFF;
