@@ -170,6 +170,11 @@ public class Es6InlineTypesTest extends CompilerTestCase {
         .transpilesTo("var s: {myNum: number; myObject};");
   }
 
+  public void testParameterizedType() throws Exception {
+    assertSource("/** @type {MyCollection.<string>} */ var s;")
+        .transpilesTo("var s: MyCollection<string>;");
+  }
+
   private SourceTranslationSubject assertSource(String... s) {
     return assertAbout(SOURCE).that(s);
   }

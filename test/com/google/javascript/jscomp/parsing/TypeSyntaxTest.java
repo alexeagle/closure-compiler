@@ -51,9 +51,9 @@ public class TypeSyntaxTest extends TestCase {
     assertVarType("any", TypeDeclarationsIRFactory.anyType(),
         "var foo: any = 'hello';");
     assertVarType("number", TypeDeclarationsIRFactory.numberType(),
-        "var foo: number = 'hello';");
+        "var foo: number = 123;");
     assertVarType("boolean", TypeDeclarationsIRFactory.booleanType(),
-        "var foo: boolean = 'hello';");
+        "var foo: boolean = true;");
     assertVarType("string", TypeDeclarationsIRFactory.stringType(),
         "var foo: string = 'hello';");
     assertVarType("void", TypeDeclarationsIRFactory.voidType(),

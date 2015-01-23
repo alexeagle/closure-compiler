@@ -95,6 +95,13 @@ public class TypeDeclarationsIRFactory {
   }
 
   /**
+   * @return a new node representing that the type is not declared.
+   */
+  public static TypeDeclarationNode unknownType() {
+    return new TypeDeclarationNode(Token.UNKNOWN_TYPE);
+  }
+
+  /**
    * Splits a '.' separated qualified name into a tree of type segments.
    *
    * @param typeName a qualified name such as "goog.ui.Window"
@@ -278,7 +285,7 @@ public class TypeDeclarationsIRFactory {
 
   public static TypeDeclarationNode convert(@Nullable JSTypeExpression typeExpr) {
     if (typeExpr == null) {
-      return anyType();
+      return unknownType();
     }
     return convertTypeNodeAST(typeExpr.getRoot());
   }
@@ -301,7 +308,7 @@ public class TypeDeclarationsIRFactory {
       case Token.VOID:
         return undefinedType();
       case Token.EMPTY: // for function types that don't declare a return type
-        return anyType();
+        return unknownType();
       case Token.BANG:
         // TODO(alexeagle): capture nullability constraints once we know how to express them
         return convertTypeNodeAST(n.getFirstChild());
@@ -340,7 +347,7 @@ public class TypeDeclarationsIRFactory {
             fieldName = fieldName.substring(1, fieldName.length() - 1);
           }
           TypeDeclarationNode fieldType = isFieldTypeDeclared
-              ? convertTypeNodeAST(field.getLastChild()) : anyType();
+              ? convertTypeNodeAST(field.getLastChild()) : unknownType();
           properties.put(fieldName, fieldType);
         }
         return recordType(properties);
@@ -349,7 +356,7 @@ public class TypeDeclarationsIRFactory {
       case Token.ELLIPSIS:
         return restParams(convertTypeNodeAST(n.getFirstChild()));
       case Token.FUNCTION:
-        Node returnType = anyType();
+        Node returnType = unknownType();
         LinkedHashMap<String, TypeDeclarationNode> parameters = new LinkedHashMap<>();
         for (Node child2 : n.children()) {
           if (child2.isParamList()) {
