@@ -30,8 +30,7 @@ import com.google.javascript.rhino.Node;
 
 import java.util.Arrays;
 
-// FIXME: rename before submitting
-public class TypescriptTypesTest extends CompilerTestCase {
+public class Es6InlineTypesTest extends CompilerTestCase {
 
   private Compiler compiler;
 
