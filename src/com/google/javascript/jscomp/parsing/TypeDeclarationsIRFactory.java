@@ -80,6 +80,13 @@ public class TypeDeclarationsIRFactory {
   }
 
   /**
+   * @return a new node indicating that no type was declared.
+   */
+  public static TypeDeclarationNode unknownType() {
+    return new TypeDeclarationNode(Token.UNKNOWN_TYPE);
+  }
+
+  /**
    * Produces a tree structure similar to the Rhino AST of a qualified name expression, under
    * a top-level NAMED_TYPE node.
    *
@@ -278,7 +285,7 @@ public class TypeDeclarationsIRFactory {
       case Token.VOID:
         return voidType();
       case Token.EMPTY: // for function types that don't declare a return type
-        return anyType();
+        return unknownType();
       case Token.BANG:
         // TODO(alexeagle): capture nullability constraints once we know how to express them
         return convertTypeNodeAST(n.getFirstChild());
@@ -318,7 +325,7 @@ public class TypeDeclarationsIRFactory {
             fieldName = fieldName.substring(1, fieldName.length() - 1);
           }
           TypeDeclarationNode fieldType = isFieldTypeDeclared
-              ? convertTypeNodeAST(field.getLastChild()) : anyType();
+              ? convertTypeNodeAST(field.getLastChild()) : unknownType();
           properties.put(fieldName, fieldType);
         }
         return recordType(properties);
@@ -327,7 +334,7 @@ public class TypeDeclarationsIRFactory {
       case Token.ELLIPSIS:
         return restParams(convertTypeNodeAST(n.getFirstChild()));
       case Token.FUNCTION:
-        Node returnType = anyType();
+        Node returnType = unknownType();
         LinkedHashMap<String, TypeDeclarationNode> parameters = new LinkedHashMap<>();
         for (Node child2 : n.children()) {
           if (child2.isParamList()) {
