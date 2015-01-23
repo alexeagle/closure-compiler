@@ -41,7 +41,6 @@ import static com.google.javascript.rhino.Token.RECORD_TYPE;
 import static com.google.javascript.rhino.Token.REST_PARAMETER_TYPE;
 import static com.google.javascript.rhino.Token.STRING_TYPE;
 import static com.google.javascript.rhino.Token.UNDEFINED_TYPE;
-import static com.google.javascript.rhino.Token.VOID_TYPE;
 import static java.util.Arrays.asList;
 
 import com.google.common.truth.FailureStrategy;
