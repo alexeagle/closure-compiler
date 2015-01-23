@@ -1046,6 +1046,7 @@ class CodeGenerator {
     }
   }
 
+  @Nullable
   private String toInlineTypeExpr(Node root) {
     StringBuilder result = new StringBuilder();
     if (root.getParent() == null) {
@@ -1090,6 +1091,8 @@ class CodeGenerator {
       case Token.VOID_TYPE:
         result.append("void");
         break;
+      case Token.UNKNOWN_TYPE:
+        return null;
       case Token.STRING_KEY:
         result.append(root.getString());
         String type = toInlineTypeExpr(root.getFirstChild());
@@ -1103,10 +1106,12 @@ class CodeGenerator {
       case Token.PARAMETERIZED_TYPE:
         String baseType = toInlineTypeExpr(children.next());
 
-        if (baseType.equals("Array")) {
-
+        if ("Array".equals(baseType)) {
           result.append(toInlineTypeExpr(children.next()))
               .append("[]");
+        } else {
+          result.append(baseType)
+              .append("<").append(toInlineTypeExpr(children.next())).append(">");
         }
         break;
       case Token.UNION_TYPE:

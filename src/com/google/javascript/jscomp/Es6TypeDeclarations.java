@@ -27,6 +27,7 @@ import com.google.javascript.rhino.Token;
 /**
  * Copies type declarations from the JSDoc (possibly of a parent node)
  * to a property on a node which represents a typed language element.
+ * TODO(alexeagle): handle inline-style JSDoc annotations as well.
  */
 public class Es6TypeDeclarations extends AbstractPostOrderCallback implements HotSwapCompilerPass {
 

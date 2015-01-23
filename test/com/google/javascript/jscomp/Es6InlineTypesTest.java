@@ -135,7 +135,7 @@ public class Es6InlineTypesTest extends CompilerTestCase {
 
   public void testUnknownType() throws Exception {
     assertSource("/** @type {?} */ var n;")
-        .transpilesTo("var n;");
+        .transpilesTo("var n: any;");
   }
 
   public void testUndefinedType() throws Exception {
