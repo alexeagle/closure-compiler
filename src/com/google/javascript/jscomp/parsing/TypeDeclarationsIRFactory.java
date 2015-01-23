@@ -95,13 +95,6 @@ public class TypeDeclarationsIRFactory {
   }
 
   /**
-   * @return a new node indicating that no type was declared.
-   */
-  public static TypeDeclarationNode unknownType() {
-    return new TypeDeclarationNode(Token.UNKNOWN_TYPE);
-  }
-
-  /**
    * Splits a '.' separated qualified name into a tree of type segments.
    *
    * @param typeName a qualified name such as "goog.ui.Window"
@@ -142,8 +135,7 @@ public class TypeDeclarationsIRFactory {
    * RECORD_TYPE
    *   STRING_KEY myNum
    *     NUMBER_TYPE
-   *   STRING_KEY myObject
-   *     UNKNOWN_TYPE
+   *   STRING myObject
    * </pre>
    * @param properties a map from property name to property type
    * @return a new node representing the record type
@@ -152,9 +144,13 @@ public class TypeDeclarationsIRFactory {
       LinkedHashMap<String, TypeDeclarationNode> properties) {
     TypeDeclarationNode node = new TypeDeclarationNode(Token.RECORD_TYPE);
     for (Map.Entry<String, TypeDeclarationNode> property : properties.entrySet()) {
-      Node stringKey = IR.stringKey(property.getKey());
-      stringKey.addChildToFront(property.getValue());
-      node.addChildToBack(stringKey);
+      if (property.getValue() == null) {
+        node.addChildrenToBack(IR.string(property.getKey()));
+      } else {
+        Node stringKey = IR.stringKey(property.getKey());
+        stringKey.addChildToFront(property.getValue());
+        node.addChildToBack(stringKey);
+      }
     }
     return node;
   }
@@ -285,7 +281,7 @@ public class TypeDeclarationsIRFactory {
 
   public static TypeDeclarationNode convert(@Nullable JSTypeExpression typeExpr) {
     if (typeExpr == null) {
-      return unknownType();
+      return anyType();
     }
     return convertTypeNodeAST(typeExpr.getRoot());
   }
@@ -308,7 +304,7 @@ public class TypeDeclarationsIRFactory {
       case Token.VOID:
         return undefinedType();
       case Token.EMPTY: // for function types that don't declare a return type
-        return unknownType();
+        return anyType();
       case Token.BANG:
         // TODO(alexeagle): capture nullability constraints once we know how to express them
         return convertTypeNodeAST(n.getFirstChild());
@@ -347,7 +343,7 @@ public class TypeDeclarationsIRFactory {
             fieldName = fieldName.substring(1, fieldName.length() - 1);
           }
           TypeDeclarationNode fieldType = isFieldTypeDeclared
-              ? convertTypeNodeAST(field.getLastChild()) : unknownType();
+              ? convertTypeNodeAST(field.getLastChild()) : null;
           properties.put(fieldName, fieldType);
         }
         return recordType(properties);
@@ -356,7 +352,7 @@ public class TypeDeclarationsIRFactory {
       case Token.ELLIPSIS:
         return restParams(convertTypeNodeAST(n.getFirstChild()));
       case Token.FUNCTION:
-        Node returnType = unknownType();
+        Node returnType = anyType();
         LinkedHashMap<String, TypeDeclarationNode> parameters = new LinkedHashMap<>();
         for (Node child2 : n.children()) {
           if (child2.isParamList()) {
