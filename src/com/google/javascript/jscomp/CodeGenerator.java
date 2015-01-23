@@ -1086,6 +1086,8 @@ class CodeGenerator {
         result.append("undefined");
         break;
       case Token.ANY_TYPE:
+        result.append("any");
+        break;
       case Token.VOID_TYPE:
         return null;
       case Token.STRING_KEY:

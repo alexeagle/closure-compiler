@@ -2029,7 +2029,7 @@ public class Node implements Cloneable, Serializable {
 
   /**
    * Returns the compiled inferred type on this node. Not to be confused
-   * with {@link #getJSTypeExpression()} which returns the syntactically
+   * with {@link #getDeclaredTypeExpression()} which returns the syntactically
    * specified type.
    */
   public JSType getJSType() {

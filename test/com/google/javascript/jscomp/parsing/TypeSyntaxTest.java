@@ -47,6 +47,12 @@ public class TypeSyntaxTest extends TestCase {
     testErrorManager.expectWarnings(warnings);
   }
 
+  public void testVariableDeclarationOfDisallowedType() throws Exception {
+    // TypeScript doesn't allow any type can't be referenced this way
+    assertVarType("void", TypeDeclarationsIRFactory.voidType(),
+        "var foo: void = 'hello';");
+  }
+
   public void testVariableDeclaration() {
     assertVarType("any", TypeDeclarationsIRFactory.anyType(),
         "var foo: any = 'hello';");
@@ -56,8 +62,6 @@ public class TypeSyntaxTest extends TestCase {
         "var foo: boolean = 'hello';");
     assertVarType("string", TypeDeclarationsIRFactory.stringType(),
         "var foo: string = 'hello';");
-    assertVarType("void", TypeDeclarationsIRFactory.voidType(),
-        "var foo: void = 'hello';");
     assertVarType("named type", TypeDeclarationsIRFactory.namedType("hello"),
         "var foo: hello = 'hello';");
   }
@@ -117,7 +121,7 @@ public class TypeSyntaxTest extends TestCase {
   }
 
   public void testFunctionReturn() {
-    Node fn = parse("function foo(): string {\n  return'hello';\n}").getFirstChild();
+    Node fn = parse("function foo(): string {\n  return 'hello';\n}").getFirstChild();
     Node fnType = fn.getDeclaredTypeExpression();
     assertEquivalent("string type", TypeDeclarationsIRFactory.stringType(), fnType);
   }
@@ -136,7 +140,7 @@ public class TypeSyntaxTest extends TestCase {
 
   public void testFunctionReturn_typeInJsdocOnly() throws Exception {
     parse("function /** string */ foo() { return 'hello'; }",
-        "function/** string */foo() {\n  return'hello';\n}");
+            "function/** string */foo() {\n  return'hello';\n}");
   }
 
   public void testCompositeType() {
@@ -155,8 +159,8 @@ public class TypeSyntaxTest extends TestCase {
   public void testArrayType() {
     TypeDeclarationNode arrayOfString =
         TypeDeclarationsIRFactory.parameterizedType(
-            TypeDeclarationsIRFactory.namedType("Array"),
-            Collections.singleton(TypeDeclarationsIRFactory.stringType()));
+                TypeDeclarationsIRFactory.namedType("Array"),
+                Collections.singleton(TypeDeclarationsIRFactory.stringType()));
     assertVarType("string[]", arrayOfString, "var foo: string[];");
   }
 
@@ -206,8 +210,7 @@ public class TypeSyntaxTest extends TestCase {
     assertTrue("Missing an error", testErrorManager.hasEncounteredAllErrors());
     assertTrue("Missing a warning", testErrorManager.hasEncounteredAllWarnings());
 
-    // DO NOT SUBMIT temporarily disabled until Alex' printing code is in.
-    if (false && script != null && testErrorManager.getErrorCount() == 0) {
+    if (script != null && testErrorManager.getErrorCount() == 0) {
       // if it can be parsed, it should round trip.
       String actual = new CodePrinter.Builder(script)
           .setCompilerOptions(options)
