@@ -47,12 +47,6 @@ public class TypeSyntaxTest extends TestCase {
     testErrorManager.expectWarnings(warnings);
   }
 
-  public void testVariableDeclarationOfDisallowedType() throws Exception {
-    // TypeScript doesn't allow any type can't be referenced this way
-    assertVarType("void", TypeDeclarationsIRFactory.voidType(),
-        "var foo: void = 'hello';");
-  }
-
   public void testVariableDeclaration() {
     assertVarType("any", TypeDeclarationsIRFactory.anyType(),
         "var foo: any = 'hello';");
@@ -62,6 +56,9 @@ public class TypeSyntaxTest extends TestCase {
         "var foo: boolean = 'hello';");
     assertVarType("string", TypeDeclarationsIRFactory.stringType(),
         "var foo: string = 'hello';");
+    assertVarType("void", TypeDeclarationsIRFactory.voidType(),
+        // The TypeScript 1.4 spec 3.2.4 says this is naughty but not disallowed
+        "var foo: void = undefined;");
     assertVarType("named type", TypeDeclarationsIRFactory.namedType("hello"),
         "var foo: hello = 'hello';");
   }
@@ -140,7 +137,7 @@ public class TypeSyntaxTest extends TestCase {
 
   public void testFunctionReturn_typeInJsdocOnly() throws Exception {
     parse("function /** string */ foo() { return 'hello'; }",
-            "function/** string */foo() {\n  return'hello';\n}");
+            "function/** string */foo() {\n  return 'hello';\n}");
   }
 
   public void testCompositeType() {

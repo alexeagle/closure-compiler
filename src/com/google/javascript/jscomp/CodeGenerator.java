@@ -1046,7 +1046,6 @@ class CodeGenerator {
     }
   }
 
-  @Nullable
   private String toInlineTypeExpr(Node root) {
     StringBuilder result = new StringBuilder();
     if (root.getParent() == null) {
@@ -1089,7 +1088,8 @@ class CodeGenerator {
         result.append("any");
         break;
       case Token.VOID_TYPE:
-        return null;
+        result.append("void");
+        break;
       case Token.STRING_KEY:
         result.append(root.getString());
         String type = toInlineTypeExpr(root.getFirstChild());
