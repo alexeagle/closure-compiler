@@ -264,6 +264,7 @@ class CodeGenerator {
 
       case Token.DEFAULT_VALUE:
         add(first);
+        addTypeExpr(n);
         cc.addOp("=", true);
         add(first.getNext());
         break;
@@ -362,7 +363,8 @@ class CodeGenerator {
 
         add(first);
 
-        add(first.getNext());
+        add(first.getNext());  // param list
+
         addTypeExpr(n);
         if (isArrow) {
           cc.addOp("=>", true);

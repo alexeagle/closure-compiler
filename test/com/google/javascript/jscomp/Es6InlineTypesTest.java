@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 The Closure Compiler Authors.
+ * Copyright 2015 The Closure Compiler Authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,7 +109,7 @@ public class Es6InlineTypesTest extends CompilerTestCase {
             "};");
   }
 
-  public void testNullableIsDropped() throws Exception {
+  public void testNullable() throws Exception {
     assertSource(
         "/** @param {!number} n @return {?string}*/",
         "function s(n) { return ''; };")
