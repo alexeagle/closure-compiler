@@ -1,3 +1,19 @@
+/*
+ * Copyright 2015 The Closure Compiler Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.javascript.jscomp.parsing;
 
 import static com.google.javascript.rhino.Node.TypeDeclarationNode;
@@ -102,7 +118,7 @@ public class TypeDeclarationsIRFactory {
    * @return a new node representing the type
    */
   public static TypeDeclarationNode namedType(String typeName) {
-    Iterator<String> parts = Splitter.on(".").split(typeName).iterator();
+    Iterator<String> parts = Splitter.on('.').split(typeName).iterator();
     Node node = IR.name(parts.next());
     while (parts.hasNext()) {
       node = IR.getprop(node, IR.string(parts.next()));
@@ -283,7 +299,7 @@ public class TypeDeclarationsIRFactory {
             namedType("Object"), numberType(), stringType(),
             booleanType(), nullType(), undefinedType());
       case Token.VOID:
-        return voidType();
+        return undefinedType();
       case Token.EMPTY: // for function types that don't declare a return type
         return unknownType();
       case Token.BANG:
@@ -301,9 +317,8 @@ public class TypeDeclarationsIRFactory {
           case "string":
             return stringType();
           case "undefined":
-            return undefinedType();
           case "void":
-            return voidType();
+            return undefinedType();
           default:
             TypeDeclarationNode root = namedType(typeName);
             if (n.getChildCount() > 0 && n.getFirstChild().isBlock()) {
