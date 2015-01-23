@@ -16,6 +16,8 @@
 
 package com.google.javascript.jscomp.parsing;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import com.google.javascript.jscomp.CodePrinter;
 import com.google.javascript.jscomp.Compiler;
 import com.google.javascript.jscomp.CompilerOptions;
@@ -48,7 +50,8 @@ public class TypeSyntaxTest extends BaseJSTypeTestCase {
     Node varDecl = parse("var foo: string = 'hello';").getFirstChild();
     String treeDelta = TypeDeclarationsIRFactory.stringType()
         .checkTreeEquals(varDecl.getFirstChild().getDeclaredTypeExpression());
-    assertNull(treeDelta);  }
+    assertNull(treeDelta);
+  }
 
   public void testVariableDeclaration_errorIncomplete() {
     expectErrors("Parse error. 'identifier' expected");
@@ -157,7 +160,7 @@ public class TypeSyntaxTest extends BaseJSTypeTestCase {
           .setTypeRegistry(compiler.getTypeRegistry())
           .build()  // does the actual printing.
           .trim();
-      assertEquals(expected, actual);
+      assertThat(actual).isEqualTo(expected);
     }
 
     return script;
