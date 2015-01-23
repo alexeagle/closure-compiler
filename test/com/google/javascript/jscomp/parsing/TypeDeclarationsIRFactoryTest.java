@@ -18,7 +18,6 @@ package com.google.javascript.jscomp.parsing;
 
 import static com.google.common.truth.Truth.THROW_ASSERTION_ERROR;
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.anyType;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.booleanType;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.namedType;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.nullType;
@@ -42,6 +41,7 @@ import static com.google.javascript.rhino.Token.RECORD_TYPE;
 import static com.google.javascript.rhino.Token.REST_PARAMETER_TYPE;
 import static com.google.javascript.rhino.Token.STRING_TYPE;
 import static com.google.javascript.rhino.Token.UNDEFINED_TYPE;
+import static com.google.javascript.rhino.Token.UNKNOWN_TYPE;
 import static java.util.Arrays.asList;
 
 import com.google.common.truth.FailureStrategy;
@@ -111,13 +111,13 @@ public class TypeDeclarationsIRFactoryTest extends TestCase {
   public void testCreateRecordType() throws Exception {
     LinkedHashMap<String, TypeDeclarationNode> properties = new LinkedHashMap<>();
     properties.put("myNum", numberType());
-    properties.put("myObject", anyType());
+    properties.put("myObject", unknownType());
     TypeDeclarationNode node = recordType(properties);
 
     Node key1 = IR.stringKey("myNum");
     key1.addChildToFront(new TypeDeclarationNode(NUMBER_TYPE));
     Node key2 = IR.stringKey("myObject");
-    key2.addChildToFront(new TypeDeclarationNode(ANY_TYPE));
+    key2.addChildToFront(new TypeDeclarationNode(UNKNOWN_TYPE));
 
     assertNode(node)
         .isEqualTo(new TypeDeclarationNode(RECORD_TYPE, key1, key2));

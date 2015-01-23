@@ -95,7 +95,7 @@ public class TypeDeclarationsIRFactory {
   }
 
   /**
-   * @return a new node representing that the type is not declared.
+   * @return a new node indicating that no type was declared.
    */
   public static TypeDeclarationNode unknownType() {
     return new TypeDeclarationNode(Token.UNKNOWN_TYPE);
