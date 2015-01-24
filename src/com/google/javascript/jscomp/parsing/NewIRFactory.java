@@ -2209,6 +2209,8 @@ class NewIRFactory {
           return TypeDeclarationsIRFactory.stringType();
         case "void":
           return TypeDeclarationsIRFactory.voidType();
+        case "undefined":
+          return TypeDeclarationsIRFactory.undefinedType();
         default:
           return TypeDeclarationsIRFactory.namedType(typeName.identifierToken.value);
       }

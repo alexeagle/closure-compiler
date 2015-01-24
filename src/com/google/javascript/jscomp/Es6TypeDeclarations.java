@@ -54,6 +54,7 @@ public class Es6TypeDeclarations extends AbstractPostOrderCallback implements Ho
         JSDocInfo bestJSDocInfo = NodeUtil.getBestJSDocInfo(n);
         if (bestJSDocInfo != null) {
           n.setDeclaredTypeExpression(convert(bestJSDocInfo.getReturnType()));
+          compiler.reportCodeChange();
         }
         break;
       case Token.NAME:
@@ -66,10 +67,12 @@ public class Es6TypeDeclarations extends AbstractPostOrderCallback implements Ho
         }
         if (parent.isVar()) {
           n.setDeclaredTypeExpression(convert(parentJSDoc.getType()));
+          compiler.reportCodeChange();
         } else if (parent.isParamList()) {
           JSTypeExpression parameterType = parentJSDoc.getParameterType(n.getString());
           if (parameterType != null) {
             n.setDeclaredTypeExpression(convert(parameterType));
+            compiler.reportCodeChange();
           }
         }
         break;
