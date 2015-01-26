@@ -287,12 +287,8 @@ abstract class NewTypeSafeDispatcher<T> {
       case ARGUMENT_LIST:
         break;
 
-      case TYPE_NAME:
-        return processTypeName(node.asTypeName());
       case TYPE_ANNOTATION:
         return processTypedParameter(node.asTypedParameter());
-      case PARAMETERIZED_TYPE_TREE:
-        return processParameterizedType(node.asParameterizedType());
 
       default:
         break;
