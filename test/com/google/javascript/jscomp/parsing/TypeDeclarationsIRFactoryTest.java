@@ -115,14 +115,14 @@ public class TypeDeclarationsIRFactoryTest extends TestCase {
 
     Node prop1 = IR.stringKey("myNum");
     prop1.addChildToFront(new TypeDeclarationNode(NUMBER_TYPE));
-    Node prop2 = IR.string("myObject");
+    Node prop2 = IR.stringKey("myObject");
 
     assertNode(node)
         .isEqualTo(new TypeDeclarationNode(RECORD_TYPE, prop1, prop2));
   }
 
   public void testConvertRecordTypeWithTypeApplication() throws Exception {
-    Node prop1 = IR.string("length");
+    Node prop1 = IR.stringKey("length");
     assertParseTypeAndConvert("Array.<{length}>")
         .isEqualTo(new TypeDeclarationNode(PARAMETERIZED_TYPE,
             namedType("Array"),

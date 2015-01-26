@@ -210,18 +210,18 @@ class CodeGenerator {
       case Token.VAR:
         if (first != null) {
           add("var ");
-          addList(first, false, getContextForNoInOperator(context));
+          addList(first, false, getContextForNoInOperator(context), ",");
         }
         break;
 
       case Token.CONST:
         add("const ");
-        addList(first, false, getContextForNoInOperator(context));
+        addList(first, false, getContextForNoInOperator(context), ",");
         break;
 
       case Token.LET:
         add("let ");
-        addList(first, false, getContextForNoInOperator(context));
+        addList(first, false, getContextForNoInOperator(context), ",");
         break;
 
       case Token.LABEL_NAME:
@@ -231,7 +231,7 @@ class CodeGenerator {
 
       case Token.NAME:
         addIdentifier(n.getString());
-        addTypeExpr(n);
+        maybeAddTypeDecl(n);
         if (first != null && !first.isEmpty()) {
           Preconditions.checkState(childCount == 1);
           cc.addOp("=", true);
@@ -263,7 +263,7 @@ class CodeGenerator {
 
       case Token.DEFAULT_VALUE:
         add(first);
-        addTypeExpr(n);
+        maybeAddTypeDecl(n);
         cc.addOp("=", true);
         add(first.getNext());
         break;
@@ -364,7 +364,7 @@ class CodeGenerator {
 
         add(first.getNext());  // param list
 
-        addTypeExpr(n);
+        maybeAddTypeDecl(n);
         if (isArrow) {
           cc.addOp("=>", true);
         }
@@ -1029,6 +1029,65 @@ class CodeGenerator {
         add("`");
         break;
 
+      // Type Declaration ASTs.
+      case Token.STRING_TYPE:
+        add("string");
+        break;
+      case Token.BOOLEAN_TYPE:
+        add("boolean");
+        break;
+      case Token.NUMBER_TYPE:
+        add("number");
+        break;
+      case Token.ANY_TYPE:
+        add("any");
+        break;
+      case Token.NULL_TYPE:
+        add("null");
+        break;
+      case Token.VOID_TYPE:
+        add("void");
+        break;
+      case Token.UNDEFINED_TYPE:
+        add("undefined");
+        break;
+      case Token.NAMED_TYPE:
+        // Children are a chain of getprop nodes.
+        add(first);
+        break;
+      case Token.FUNCTION_TYPE:
+        Node returnType = first;
+        add("(");
+        addList(first.getNext());
+        add(")");
+        cc.addOp("=>", true);
+        add(returnType);
+        break;
+      case Token.OPTIONAL_PARAMETER:
+        // The '?' token was printed in #maybeAddTypeDecl because it
+        // must come before the colon
+        add(first);
+        break;
+      case Token.PARAMETERIZED_TYPE:
+        if ("Array".equals(first.getFirstChild().getString())) {
+          add(first.getNext());
+          add("[]");
+        } else {
+          add(first);
+          add("<");
+          addList(first.getNext());
+          add(">");
+        }
+        break;
+      case Token.UNION_TYPE:
+        addList(first, " |");
+        break;
+      case Token.RECORD_TYPE:
+        add("{");
+        addList(first, false, Context.STATEMENT, ";");
+        add("}");
+        break;
+
       default:
         throw new RuntimeException(
             "Unknown type " + Token.name(type) + "\n" + n.toStringTree());
@@ -1037,121 +1096,15 @@ class CodeGenerator {
     cc.endSourceMapping(n);
   }
 
-  private void addTypeExpr(Node n) {
+  private void maybeAddTypeDecl(Node n) {
     if (n.getDeclaredTypeExpression() != null) {
-      String inlineType = toInlineTypeExpr(n.getDeclaredTypeExpression());
-      if (inlineType != null) {
-        add(inlineType);
+      if (n.getDeclaredTypeExpression().getType() == Token.OPTIONAL_PARAMETER) {
+        add("?");
       }
+      add(":");
+      cc.maybeInsertSpace();
+      add(n.getDeclaredTypeExpression());
     }
-  }
-
-  @Nullable
-  private String toInlineTypeExpr(Node root) {
-    StringBuilder result = new StringBuilder();
-    if (root.getParent() == null) {
-      if (root.getType() == Token.OPTIONAL_PARAMETER) {
-        result.append("?");
-      }
-      result.append(": ");
-    }
-
-    Iterator<Node> children = root.children().iterator();
-    boolean first;
-    switch (root.getType()) {
-      case Token.STRING_TYPE:
-        result.append("string");
-        break;
-      case Token.NUMBER_TYPE:
-        result.append("number");
-        break;
-      case Token.BOOLEAN_TYPE:
-        result.append("boolean");
-        break;
-      case Token.NULL_TYPE:
-        result.append("null");
-        break;
-      case Token.GETPROP:
-        result.append(toInlineTypeExpr(root.getFirstChild()))
-            .append(".").append(toInlineTypeExpr(root.getLastChild()));
-        break;
-      case Token.NAME:
-      case Token.STRING:
-        result.append(root.getString());
-        break;
-      case Token.NAMED_TYPE:
-        result.append(toInlineTypeExpr(root.getFirstChild()));
-        break;
-      case Token.UNDEFINED_TYPE:
-        result.append("undefined");
-        break;
-      case Token.ANY_TYPE:
-        result.append("any");
-        break;
-      case Token.VOID_TYPE:
-        result.append("void");
-        break;
-      case Token.STRING_KEY:
-        result.append(root.getString());
-        String type = toInlineTypeExpr(root.getFirstChild());
-        if (type != null) {
-          result.append(": ").append(type);
-        }
-        break;
-      case Token.OPTIONAL_PARAMETER:
-        result.append(toInlineTypeExpr(root.getFirstChild()));
-        break;
-      case Token.PARAMETERIZED_TYPE:
-        String baseType = toInlineTypeExpr(children.next());
-
-        if ("Array".equals(baseType)) {
-          result.append(toInlineTypeExpr(children.next()))
-              .append("[]");
-        } else {
-          result.append(baseType)
-              .append("<").append(toInlineTypeExpr(children.next())).append(">");
-        }
-        break;
-      case Token.UNION_TYPE:
-        first = true;
-        for (Node typeOption : root.children()) {
-          if (!first) {
-            result.append(" | ");
-          }
-          result.append(toInlineTypeExpr(typeOption));
-          first = false;
-        }
-        break;
-      case Token.FUNCTION_TYPE:
-        Node returnType = children.next();
-        result.append("(");
-        first = true;
-        while (children.hasNext()) {
-          if (!first) {
-            result.append(", ");
-          }
-          result.append(toInlineTypeExpr(children.next()));
-          first = false;
-        }
-        result.append(") => ");
-        result.append(toInlineTypeExpr(returnType));
-        break;
-      case Token.RECORD_TYPE:
-        result.append("{");
-        first = true;
-        while (children.hasNext()) {
-          if (!first) {
-            result.append("; ");
-          }
-          result.append(toInlineTypeExpr(children.next()));
-          first = false;
-        }
-        result.append("}");
-        break;
-      default:
-        throw new RuntimeException("Don't understand node type " + root.toString());
-    }
-    return result.toString();
   }
 
   /**
@@ -1327,17 +1280,23 @@ class CodeGenerator {
   }
 
   void addList(Node firstInList) {
-    addList(firstInList, true, Context.OTHER);
+    addList(firstInList, true, Context.OTHER, ",");
+  }
+
+  void addList(Node firstInList, String separator) {
+    addList(firstInList, true, Context.OTHER, separator);
   }
 
   void addList(Node firstInList, boolean isArrayOrFunctionArgument,
-               Context lhsContext) {
+      Context lhsContext, String separator) {
     for (Node n = firstInList; n != null; n = n.getNext()) {
       boolean isFirst = n == firstInList;
       if (isFirst) {
         addExpr(n, isArrayOrFunctionArgument ? 1 : 0, lhsContext);
       } else {
-        cc.listSeparator();
+        cc.add(separator);
+        cc.maybeInsertSpace();
+        cc.maybeLineBreak();
         addExpr(n, isArrayOrFunctionArgument ? 1 : 0,
             getContextForNoInOperator(lhsContext));
       }
@@ -1367,6 +1326,7 @@ class CodeGenerator {
     }
     if (n.hasChildren()) {
       add(":");
+      cc.maybeInsertSpace();
       addExpr(n.getFirstChild(), 1, Context.OTHER);
     }
   }

@@ -1636,6 +1636,14 @@ public class Node implements Cloneable, Serializable {
       return false;
     }
 
+    if (this.getDeclaredTypeExpression() != null || node.getDeclaredTypeExpression() != null) {
+      if (this.getDeclaredTypeExpression() == null || node.getDeclaredTypeExpression() == null
+          || !this.getDeclaredTypeExpression()
+          .isEquivalentTo(node.getDeclaredTypeExpression(), compareType, recurse, jsDoc)) {
+        return false;
+      }
+    }
+
     if (type == Token.INC || type == Token.DEC) {
       int post1 = this.getIntProp(INCRDECR_PROP);
       int post2 = node.getIntProp(INCRDECR_PROP);

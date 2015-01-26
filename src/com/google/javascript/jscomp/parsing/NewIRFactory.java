@@ -2196,6 +2196,9 @@ class NewIRFactory {
           case "string":
             typeNode = TypeDeclarationsIRFactory.stringType();
             break;
+          case "undefined":
+            typeNode = TypeDeclarationsIRFactory.undefinedType();
+            break;
           case "void":
             typeNode = TypeDeclarationsIRFactory.voidType();
             break;

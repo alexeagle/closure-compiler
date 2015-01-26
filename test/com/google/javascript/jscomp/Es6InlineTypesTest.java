@@ -38,6 +38,7 @@ public class Es6InlineTypesTest extends CompilerTestCase {
   public void setUp() {
     setAcceptedLanguage(LanguageMode.ECMASCRIPT6);
     enableAstValidation(true);
+    compareJsDoc = false;
     runTypeCheckAfterProcessing = true;
     compiler = createCompiler();
   }
@@ -61,51 +62,33 @@ public class Es6InlineTypesTest extends CompilerTestCase {
   }
 
   public void testVariableDeclaration() {
-    assertSource("/** @type {string} */ var print;")
-        .transpilesTo("var print: string;");
+    test("/** @type {string} */ var print;", "var print: string;");
   }
 
   public void testVariableDeclarationWithoutDeclaredType() throws Exception {
-    assertSource("var print;")
-        .transpilesTo("var print;");
+    test("var print;", "var print;");
   }
 
   public void testFunctionReturnType() throws Exception {
-    assertSource("/** @return {boolean} */ function b(){}")
-        .transpilesTo(
-            "function b(): boolean {",
-            "}",
-            ";");
+    test("/** @return {boolean} */ function b(){}", "function b(): boolean {}");
   }
 
   public void testFunctionParameterTypes() throws Exception {
-    assertSource(
-        "/** @param {number} n @param {string} s */",
-        "function t(n,s){}")
-        .transpilesTo(
-            "function t(n: number, s: string): any {",
-            "}",
-            ";");
+    test("/** @param {number} n @param {string} s */ function t(n,s){}",
+        "function t(n: number, s: string) {}");
   }
 
   public void testFunctionInsideAssignment() throws Exception {
-    assertSource(
-        "/** @param {boolean} b @return {boolean} */",
-        "var f = function(b){return !b};")
-        .transpilesTo(
-            "var f = function(b: boolean): boolean {",
-            "  return !b;",
-            "};");
+    test("/** @param {boolean} b @return {boolean} */ var f = function(b){return !b};",
+        "var f = function(b: boolean): boolean { return !b; };");
   }
 
   public void testNestedFunctions() throws Exception {
-    assertSource("/**@param {boolean} b*/",
-        "var f = function(b){var t = function(l) {}; t();};")
-        .transpilesTo(
-            "var f = function(b: boolean) {",
-            "  var t = function(l) {",
-            "  };",
-            "  t();",
+    test("/**@param {boolean} b*/ var f = function(b){var t = function(l) {}; t();};",
+        "var f = function(b: boolean) {" +
+            "  var t = function(l) {" +
+            "  };" +
+            "  t();" +
             "};");
   }
 
@@ -134,13 +117,11 @@ public class Es6InlineTypesTest extends CompilerTestCase {
   }
 
   public void testUnknownType() throws Exception {
-    assertSource("/** @type {?} */ var n;")
-        .transpilesTo("var n: any;");
+    test("/** @type {?} */ var n;", "var n: any;");
   }
 
   public void testUndefinedType() throws Exception {
-    assertSource("/** @type {undefined} */ var n;")
-        .transpilesTo("var n: undefined;");
+    test("/** @type {undefined} */ var n;", "var n: undefined;");
   }
 
   public void testNullType() throws Exception {
@@ -173,6 +154,9 @@ public class Es6InlineTypesTest extends CompilerTestCase {
   public void testParameterizedType() throws Exception {
     assertSource("/** @type {MyCollection.<string>} */ var s;")
         .transpilesTo("var s: MyCollection<string>;");
+    assertSource("/** @type {Object.<string, number>}  */ var s;")
+        .transpilesTo("var s: Object<string, number>;");
+
   }
 
   private SourceTranslationSubject assertSource(String... s) {

@@ -1425,6 +1425,15 @@ public final class NodeUtil {
         return 15;
       case Token.CAST:
         return 16;
+      case Token.STRING_TYPE:
+      case Token.NUMBER_TYPE:
+      case Token.BOOLEAN_TYPE:
+      case Token.ANY_TYPE:
+      case Token.RECORD_TYPE:
+      case Token.NULL_TYPE:
+      case Token.NAMED_TYPE:
+      case Token.UNDEFINED_TYPE:
+        return 17;
 
       default:
         throw new IllegalStateException("Unknown precedence for "

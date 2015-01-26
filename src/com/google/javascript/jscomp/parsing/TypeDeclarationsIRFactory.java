@@ -135,7 +135,7 @@ public class TypeDeclarationsIRFactory {
    * RECORD_TYPE
    *   STRING_KEY myNum
    *     NUMBER_TYPE
-   *   STRING myObject
+   *   STRING_KEY myObject
    * </pre>
    * @param properties a map from property name to property type
    * @return a new node representing the record type
@@ -145,7 +145,7 @@ public class TypeDeclarationsIRFactory {
     TypeDeclarationNode node = new TypeDeclarationNode(Token.RECORD_TYPE);
     for (Map.Entry<String, TypeDeclarationNode> property : properties.entrySet()) {
       if (property.getValue() == null) {
-        node.addChildrenToBack(IR.string(property.getKey()));
+        node.addChildrenToBack(IR.stringKey(property.getKey()));
       } else {
         Node stringKey = IR.stringKey(property.getKey());
         stringKey.addChildToFront(property.getValue());
