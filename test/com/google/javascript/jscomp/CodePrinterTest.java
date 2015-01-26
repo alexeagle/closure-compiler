@@ -1177,7 +1177,7 @@ public class CodePrinterTest extends TestCase {
   public void testEnumAnnotation1() {
     assertTypeAnnotations(
         "/** @enum {string} */ var Enum = {FOO: 'x', BAR: 'y'};",
-        "/** @enum {string} */\nvar Enum = {FOO:\"x\", BAR:\"y\"};\n");
+        "/** @enum {string} */\nvar Enum = {FOO: \"x\", BAR: \"y\"};\n");
   }
 
   public void testEnumAnnotation2() {
@@ -1186,7 +1186,7 @@ public class CodePrinterTest extends TestCase {
         "/** @enum {string} */ goog.Enum = {FOO: 'x', BAR: 'y'};" +
         "/** @const */ goog.Enum2 = goog.x ? {} : goog.Enum;",
         "var goog = goog || {};\n" +
-        "/** @enum {string} */\ngoog.Enum = {FOO:\"x\", BAR:\"y\"};\n" +
+        "/** @enum {string} */\ngoog.Enum = {FOO: \"x\", BAR: \"y\"};\n" +
         "/** @type {(Object|{})} */\ngoog.Enum2 = goog.x ? {} : goog.Enum;\n");
   }
 

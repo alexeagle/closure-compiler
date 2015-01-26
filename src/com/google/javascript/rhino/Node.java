@@ -806,7 +806,7 @@ public class Node implements Cloneable, Serializable {
 
   public void replaceChildAfter(Node prevChild, Node newChild) {
     Preconditions.checkArgument(prevChild.parent == this,
-      "prev is not a child of this node.");
+        "prev is not a child of this node.");
 
     Preconditions.checkArgument(newChild.next == null,
         "The new child node has siblings.");
@@ -928,7 +928,11 @@ public class Node implements Cloneable, Serializable {
     }
   }
 
-  public void setDeclaredTypeExpression(/** fixme: TypeDeclaration*/Node typeExpression) {
+  /**
+   * TODO(alexeagle): this should take a TypeDeclarationNode
+   * @param typeExpression
+   */
+  public void setDeclaredTypeExpression(Node typeExpression) {
     putProp(DECLARED_TYPE_EXPR, typeExpression);
   }
 

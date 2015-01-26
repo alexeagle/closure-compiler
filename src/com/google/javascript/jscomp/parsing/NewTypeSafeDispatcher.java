@@ -101,9 +101,7 @@ abstract class NewTypeSafeDispatcher<T> {
   abstract T processImportSpec(ImportSpecifierTree tree);
   abstract T processModuleImport(ModuleImportTree tree);
 
-  abstract T processTypeName(TypeNameTree tree);
   abstract T processTypedParameter(TypedParameterTree asTypeAnnotation);
-  abstract T processParameterizedType(ParameterizedTypeTree tree);
 
   abstract T processMissingExpression(MissingPrimaryExpressionTree tree);
 
