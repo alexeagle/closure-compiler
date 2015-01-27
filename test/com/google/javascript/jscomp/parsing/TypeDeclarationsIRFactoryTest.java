@@ -55,18 +55,13 @@ public class TypeDeclarationsIRFactoryTest extends TestCase {
 
   public void testConvertSimpleTypes() {
     assertParseTypeAndConvert("?").hasType(ANY_TYPE);
+    assertParseTypeAndConvert("*").hasType(ANY_TYPE);
     assertParseTypeAndConvert("boolean").hasType(BOOLEAN_TYPE);
     assertParseTypeAndConvert("null").hasType(NULL_TYPE);
     assertParseTypeAndConvert("number").hasType(NUMBER_TYPE);
     assertParseTypeAndConvert("string").hasType(STRING_TYPE);
     assertParseTypeAndConvert("void").hasType(UNDEFINED_TYPE);
     assertParseTypeAndConvert("undefined").hasType(UNDEFINED_TYPE);
-  }
-
-  public void testConvertStarType() throws Exception {
-    assertParseTypeAndConvert("*").isEqualTo(unionType(
-        namedType("Object"), numberType(), stringType(),
-        booleanType(), nullType(), undefinedType()));
   }
 
   public void testConvertNamedTypes() throws Exception {

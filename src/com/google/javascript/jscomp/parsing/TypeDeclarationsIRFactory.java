@@ -294,13 +294,10 @@ public class TypeDeclarationsIRFactory {
     int token = n.getType();
     switch (token) {
       case Token.STAR:
-        return unionType(
-            namedType("Object"), numberType(), stringType(),
-            booleanType(), nullType(), undefinedType());
-      case Token.VOID:
-        return undefinedType();
       case Token.EMPTY: // for function types that don't declare a return type
         return anyType();
+      case Token.VOID:
+      return undefinedType();
       case Token.BANG:
         // TODO(alexeagle): capture nullability constraints once we know how to express them
         return convertTypeNodeAST(n.getFirstChild());
