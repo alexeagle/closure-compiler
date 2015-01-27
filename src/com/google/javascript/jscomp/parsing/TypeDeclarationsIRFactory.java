@@ -140,11 +140,7 @@ public class TypeDeclarationsIRFactory {
     TypeDeclarationNode node = new TypeDeclarationNode(Token.RECORD_TYPE);
     for (Map.Entry<String, TypeDeclarationNode> property : properties.entrySet()) {
       if (property.getValue() == null) {
-<<<<<<< HEAD
-        node.addChildrenToBack(IR.stringKey(property.getKey()));
-=======
         node.addChildToBack(IR.string(property.getKey()));
->>>>>>> ready_to_merge_upstream
       } else {
         Node stringKey = IR.stringKey(property.getKey());
         stringKey.addChildToFront(property.getValue());
