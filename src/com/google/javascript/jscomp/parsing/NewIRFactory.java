@@ -107,7 +107,6 @@ import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
 import com.google.javascript.rhino.ErrorReporter;
 import com.google.javascript.rhino.IR;
 import com.google.javascript.rhino.JSDocInfo;
-import com.google.javascript.rhino.JSTypeExpression;
 import com.google.javascript.rhino.Node;
 import com.google.javascript.rhino.Node.TypeDeclarationNode;
 import com.google.javascript.rhino.Token;
@@ -506,6 +505,7 @@ class NewIRFactory {
         case Token.SETTER_DEF:
         case Token.MEMBER_DEF:
         case Token.STRING_KEY:
+        case Token.EXPORT:
           return;
         case Token.GETELEM:
         case Token.GETPROP:

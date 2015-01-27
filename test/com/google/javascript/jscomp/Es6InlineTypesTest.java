@@ -16,14 +16,12 @@
 
 package com.google.javascript.jscomp;
 
-import static com.google.common.truth.Truth.assertAbout;
-import static com.google.common.truth.Truth.assertWithMessage;
+import static com.google.common.truth.Truth.THROW_ASSERTION_ERROR;
 import static java.util.Arrays.asList;
 
 import com.google.common.base.Joiner;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.Subject;
-import com.google.common.truth.SubjectFactory;
 import com.google.common.truth.Truth;
 import com.google.javascript.jscomp.CompilerOptions.LanguageMode;
 import com.google.javascript.rhino.Node;
@@ -85,35 +83,11 @@ public class Es6InlineTypesTest extends CompilerTestCase {
 
   public void testNestedFunctions() throws Exception {
     test("/**@param {boolean} b*/ var f = function(b){var t = function(l) {}; t();};",
-        "var f = function(b: boolean) {" +
+            "var f = function(b: boolean) {" +
             "  var t = function(l) {" +
             "  };" +
             "  t();" +
             "};");
-  }
-
-  public void testNullable() throws Exception {
-    assertSource(
-        "/** @param {!number} n @return {?string}*/",
-        "function s(n) { return ''; };")
-        .transpilesTo(
-            "function s(n: number): null | string {",
-            "  return '';",
-            "}",
-            ";");
-  }
-
-  public void testOptionalParameter() throws Exception {
-    assertSource("/** @param {goog.dom.Foo=} n */ function s(n) { };")
-        .transpilesTo(
-            "function s(n?: goog.dom.Foo) {",
-            "}",
-            ";");
-  }
-
-  public void testStarType() throws Exception {
-    assertSource("/** @type {*} */ var n;")
-        .transpilesTo("var n: Object | number | string | boolean | null | undefined;");
   }
 
   public void testUnknownType() throws Exception {
@@ -160,15 +134,8 @@ public class Es6InlineTypesTest extends CompilerTestCase {
   }
 
   private SourceTranslationSubject assertSource(String... s) {
-    return assertAbout(SOURCE).that(s);
+    return new SourceTranslationSubject(THROW_ASSERTION_ERROR, s);
   }
-
-  private final SubjectFactory<SourceTranslationSubject, String[]> SOURCE =
-      new SubjectFactory<SourceTranslationSubject, String[]>() {
-    @Override
-    public SourceTranslationSubject getSubject(FailureStrategy fs, String[] o) {
-      return new SourceTranslationSubject(fs, o);
-    }};
 
   private class SourceTranslationSubject
       extends Subject<SourceTranslationSubject, String[]> {
@@ -181,14 +148,15 @@ public class Es6InlineTypesTest extends CompilerTestCase {
       compiler.init(externsInputs,
           asList(SourceFile.fromCode("expected", Joiner.on("\n").join(lines))), getOptions());
       Node root = compiler.parseInputs();
-      assertWithMessage("Parsing error: " + Arrays.toString(compiler.getErrors()))
-          .that(compiler.getErrorCount()).is(0);
+      assertEquals("Parsing error: " + Arrays.toString(compiler.getErrors()),
+          0, compiler.getErrorCount());
       getProcessor(compiler).process(root.getFirstChild(), root.getLastChild());
       return compiler.toSource();
     }
 
     public void transpilesTo(String... lines) {
-      Truth.assertThat(doCompile(getSubject()).trim()).is("'use strict';" + Joiner.on("\n").join(lines));
+      Truth.assertThat(doCompile(getSubject()).trim())
+          .is("'use strict';" + Joiner.on("\n").join(lines));
     }
   }
 }

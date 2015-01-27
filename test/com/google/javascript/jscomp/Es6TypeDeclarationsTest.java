@@ -16,41 +16,43 @@
 
 package com.google.javascript.jscomp;
 
-import static com.google.common.truth.Truth.assertAbout;
-import static com.google.common.truth.Truth.assertWithMessage;
-import static com.google.javascript.rhino.Node.TypeDeclarationNode;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.booleanType;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.numberType;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.stringType;
+import static com.google.javascript.rhino.Node.TypeDeclarationNode;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.truth.FailureStrategy;
-import com.google.common.truth.Subject;
-import com.google.common.truth.SubjectFactory;
 import com.google.javascript.rhino.Node;
 
 import junit.framework.TestCase;
 
 public class Es6TypeDeclarationsTest extends TestCase {
 
+  private Compiler compiler;
+
+  public void setUp() throws Exception {
+    super.setUp();
+    compiler = new Compiler();
+  }
+
   public void testVar() throws Exception {
-    assertAbout(compile("/** @type {string} */ var s;"))
-        .that("s").hasType(stringType());
+    assertIdentifierHasType(
+        compile("/** @type {string} */ var s;"),
+        "s", stringType());
   }
 
   public void testFunction() throws Exception {
-    assertAbout(compile("/** @return {boolean} */ function b(){}"))
-        .that("b").hasType(booleanType());
+    assertIdentifierHasType(compile("/** @return {boolean} */ function b(){}"),
+        "b", booleanType());
   }
 
   public void testFunctionParameters() throws Exception {
-    assertAbout(compile("/** @param {number} n @param {string} s */ function t(n,s){}"))
-        .that("n").hasType(numberType());
+    assertIdentifierHasType(
+        compile("/** @param {number} n @param {string} s */ function t(n,s){}"),
+        "n", numberType());
   }
 
-  public SubjectFactory<TypeExprSubject, String> compile(String js) {
-    final Compiler compiler = new Compiler();
-
+  public Node compile(String js) {
     SourceFile input = SourceFile.fromCode("js", js);
     CompilerOptions options = new CompilerOptions();
     options.setRenamingPolicy(VariableRenamingPolicy.OFF, PropertyRenamingPolicy.OFF);
@@ -62,35 +64,20 @@ public class Es6TypeDeclarationsTest extends TestCase {
         compiler.getRoot().getFirstChild(),
         compiler.getRoot().getLastChild());
 
-    return new SubjectFactory<TypeExprSubject, String>() {
-      @Override
-      public TypeExprSubject getSubject(FailureStrategy failureStrategy, String identifier) {
-        FindNode visitor = new FindNode(identifier);
-        Node root = compiler.getRoot().getLastChild();
-        NodeTraversal.traverse(compiler, root, visitor);
-        assertWithMessage("Did not find a node named " + identifier + " in " + root.toStringTree())
-            .that(visitor.foundNode).isNotNull();
-        TypeDeclarationNode declaredType = visitor.foundNode.getDeclaredTypeExpression();
-        assertWithMessage(identifier + " missing DECLARED_TYPE_EXPR in " + root.toStringTree())
-            .that(declaredType).isNotNull();
-
-        return new TypeExprSubject(failureStrategy, identifier, declaredType);
-      }
-    };
+    return compiler.getRoot().getLastChild();
   }
 
-  private class TypeExprSubject extends Subject<TypeExprSubject, String> {
-    private final TypeDeclarationNode typeExpr;
-
-    public TypeExprSubject(FailureStrategy fs, String identifier, TypeDeclarationNode typeExpr) {
-      super(fs, identifier);
-      this.typeExpr = typeExpr;
-    }
-
-    public void hasType(TypeDeclarationNode type) {
-      assertTrue(getSubject() + " is of type " + typeExpr + " not of type " + type,
-          type.isEquivalentTo(typeExpr));
-    }
+  private void assertIdentifierHasType(Node root, String identifier,
+      TypeDeclarationNode expectedType) {
+    FindNode visitor = new FindNode(identifier);
+    NodeTraversal.traverse(compiler, root, visitor);
+    assertNotNull("Did not find a node named " + identifier + " in " + root.toStringTree(),
+        visitor.foundNode);
+    TypeDeclarationNode actualType = visitor.foundNode.getDeclaredTypeExpression();
+    assertNotNull(identifier + " missing DECLARED_TYPE_EXPR in " + root.toStringTree(),
+        actualType);
+    assertTrue(visitor.foundNode + " is of type " + actualType
+        + " not of type " + expectedType, expectedType.isEquivalentTo(actualType));
   }
 
   private static class FindNode extends NodeTraversal.AbstractPostOrderCallback {
