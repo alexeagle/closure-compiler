@@ -1068,6 +1068,10 @@ class CodeGenerator {
         // must come before the colon
         add(first);
         break;
+      case Token.REST_PARAMETER_TYPE:
+        add("...");
+        add(first);
+        break;
       case Token.PARAMETERIZED_TYPE:
         if ("Array".equals(first.getFirstChild().getString())) {
           add(first.getNext());

@@ -103,6 +103,11 @@ public class Es6InlineTypesTest extends CompilerTestCase {
         .transpilesTo("var n: null;");
   }
 
+  public void testUntypedVarargs() throws Exception {
+    assertSource("/** @param {function(this:T, ...)} fn */ function f(fn) {}")
+        .transpilesTo("function f(fn: (...p1) => any) {\n}\n;");
+  }
+
   public void testFunctionType() throws Exception {
     assertSource("/** @type {function(string,number):boolean} */ var n;")
         .transpilesTo("var n: (p1: string, p2: number) => boolean;");

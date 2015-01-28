@@ -170,12 +170,20 @@ public class TypeDeclarationsIRFactory {
    * @return
    */
   public static TypeDeclarationNode functionType(
-      Node returnType, LinkedHashMap<String, TypeDeclarationNode> parameters) {
+      Node returnType, LinkedHashMap<String, TypeDeclarationNode> parameters,
+      String restName, TypeDeclarationNode restType) {
     TypeDeclarationNode node = new TypeDeclarationNode(Token.FUNCTION_TYPE, returnType);
     for (Map.Entry<String, TypeDeclarationNode> parameter : parameters.entrySet()) {
       Node stringKey = IR.stringKey(parameter.getKey());
       stringKey.addChildToFront(parameter.getValue());
       node.addChildToBack(stringKey);
+    }
+    if (restName != null) {
+      Node rest = IR.stringKey(restName);
+      if (restType != null) {
+        rest.addChildToBack(restType);
+      }
+      node.addChildToBack(restParams(rest));
     }
     return node;
   }
@@ -242,16 +250,20 @@ public class TypeDeclarationsIRFactory {
    *   NUMBER_TYPE
    *   STRING_KEY p1
    *     STRING_TYPE
-   *   STRING_KEY p2
-   *     REST_PARAMETER_TYPE
+   *   REST_PARAMETER_TYPE
+   *     STRING_KEY p2
    *       NUMBER_TYPE
    * </pre>
    * @param type the type each of the parameters should have.
    *             (NB: TypeScript instead gives the array type that is seen inside the function)
    * @return a new node representing the function parameter type
    */
-  public static TypeDeclarationNode restParams(TypeDeclarationNode type) {
-    return new TypeDeclarationNode(Token.REST_PARAMETER_TYPE, type);
+  public static TypeDeclarationNode restParams(Node type) {
+    TypeDeclarationNode node = new TypeDeclarationNode(Token.REST_PARAMETER_TYPE);
+    if (type != null) {
+      node.addChildToBack(type);
+    }
+    return node;
   }
 
   /**
@@ -342,16 +354,23 @@ public class TypeDeclarationsIRFactory {
         return recordType(properties);
       case Token.PIPE:
         return unionType(Iterables.transform(n.children(), CONVERT_TYPE_NODE));
-      case Token.ELLIPSIS:
-        return restParams(convertTypeNodeAST(n.getFirstChild()));
       case Token.FUNCTION:
         Node returnType = anyType();
         LinkedHashMap<String, TypeDeclarationNode> parameters = new LinkedHashMap<>();
+        String restName = null;
+        TypeDeclarationNode restType = null;
         for (Node child2 : n.children()) {
           if (child2.isParamList()) {
             int paramIdx = 1;
             for (Node param : child2.children()) {
-              parameters.put("p" + paramIdx++, convertTypeNodeAST(param));
+              if (param.getType() == Token.ELLIPSIS) {
+                restName = "p" + paramIdx++;
+                if (param.getFirstChild() != null) {
+                  restType = convertTypeNodeAST(param.getFirstChild());
+                }
+              } else {
+                parameters.put("p" + paramIdx++, convertTypeNodeAST(param));
+              }
             }
           } else if (child2.isNew()) {
             // TODO(alexeagle): keep the constructor signatures on the tree, and emit them following
@@ -363,7 +382,7 @@ public class TypeDeclarationsIRFactory {
             returnType = convertTypeNodeAST(child2);
           }
         }
-        return functionType(returnType, parameters);
+        return functionType(returnType, parameters, restName, restType);
       case Token.EQUALS:
         return optionalParameter(convertTypeNodeAST(n.getFirstChild()));
       default:

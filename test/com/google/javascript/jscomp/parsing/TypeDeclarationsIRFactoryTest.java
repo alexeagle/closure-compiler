@@ -166,9 +166,10 @@ public class TypeDeclarationsIRFactoryTest extends TestCase {
     Node stringKey1 = IR.stringKey("p1");
     stringKey1.addChildToFront(stringType());
     Node stringKey2 = IR.stringKey("p2");
-    stringKey2.addChildToFront(new TypeDeclarationNode(REST_PARAMETER_TYPE, numberType()));
+    stringKey2.addChildToFront(numberType());
     assertParseTypeAndConvert("function(string, ...number): number")
-        .isEqualTo(new TypeDeclarationNode(FUNCTION_TYPE, numberType(), stringKey1, stringKey2));
+        .isEqualTo(new TypeDeclarationNode(FUNCTION_TYPE, numberType(),
+            stringKey1, new TypeDeclarationNode(REST_PARAMETER_TYPE, stringKey2)));
   }
 
   public void testConvertOptionalFunctionParameters() throws Exception {
@@ -176,7 +177,7 @@ public class TypeDeclarationsIRFactoryTest extends TestCase {
     parameters.put("p1", optionalParameter(unionType(nullType(), stringType())));
     parameters.put("p2", optionalParameter(numberType()));
     assertParseTypeAndConvert("function(?string=, number=)")
-        .isEqualTo(TypeDeclarationsIRFactory.functionType(anyType(), parameters));
+        .isEqualTo(TypeDeclarationsIRFactory.functionType(anyType(), parameters, null, null));
   }
 
   private NodeSubject assertParseTypeAndConvert(final String typeExpr) {
