@@ -227,6 +227,9 @@ public class DefaultPassConfig extends PassConfig {
       checks.add(convertEs6ToEs3);
       checks.add(rewriteLetConst);
       checks.add(rewriteGenerators);
+      if (options.getLanguageOut() == LanguageMode.ECMASCRIPT6_TYPED) {
+        checks.add(es6TypeDeclarations);
+      }
       checks.add(markTranspilationDone);
     }
 
@@ -406,10 +409,6 @@ public class DefaultPassConfig extends PassConfig {
     if (options.nameReferenceReportPath != null &&
         !options.nameReferenceReportPath.isEmpty()) {
       checks.add(printNameReferenceReport);
-    }
-
-    if (options.getLanguageOut() == LanguageMode.ECMASCRIPT6_TYPED) {
-      checks.add(es6TypeDeclarations);
     }
 
     checks.add(createEmptyPass("afterStandardChecks"));
