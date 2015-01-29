@@ -1,8 +1,10 @@
 package com.google.javascript.jscomp;
 
-/**
- * Created by alexeagle on 1/28/15.
- */
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+@Retention(RetentionPolicy.RUNTIME)
 public @interface NotEs6Compatible {
 
+  String issue();
 }

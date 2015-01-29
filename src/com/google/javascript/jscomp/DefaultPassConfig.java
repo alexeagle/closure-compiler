@@ -16,10 +16,12 @@
 
 package com.google.javascript.jscomp;
 
+import static com.google.common.collect.Collections2.filter;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -408,10 +410,6 @@ public class DefaultPassConfig extends PassConfig {
       checks.add(printNameReferenceReport);
     }
 
-    if (options.getLanguageOut() == LanguageMode.ECMASCRIPT6_TYPED) {
-      checks.add(es6TypeDeclarations);
-    }
-
     checks.add(createEmptyPass("afterStandardChecks"));
 
     assertAllOneTimePasses(checks);
@@ -772,7 +770,7 @@ public class DefaultPassConfig extends PassConfig {
     passes.add(sanityCheckAst);
     passes.add(sanityCheckVars);
 
-    return passes;
+    return Lists.transform(passes, new IsCompatiblePass(options));
   }
 
   /** Creates the passes for the main optimization loop. */
