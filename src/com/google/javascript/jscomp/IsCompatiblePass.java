@@ -6,8 +6,6 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.javascript.rhino.Node;
 
-import sun.reflect.annotation.AnnotationType;
-
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.logging.Logger;
