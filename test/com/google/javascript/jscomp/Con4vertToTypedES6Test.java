@@ -34,7 +34,7 @@ import junit.framework.TestCase;
  * styles is in
  * {@link com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactoryTest}
  */
-public class ConvertToTypedEs6Test extends TestCase {
+public class Con4vertToTypedES6Test extends TestCase {
 
   private Compiler compiler;
 
@@ -73,7 +73,7 @@ public class ConvertToTypedEs6Test extends TestCase {
     compiler.init(ImmutableList.<SourceFile>of(), ImmutableList.of(input), options);
     compiler.parseInputs();
 
-    CompilerPass pass = new ConvertToTypedEs6(compiler);
+    CompilerPass pass = new Con4vertToTypedES6(compiler);
     pass.process(
         compiler.getRoot().getFirstChild(),
         compiler.getRoot().getLastChild());

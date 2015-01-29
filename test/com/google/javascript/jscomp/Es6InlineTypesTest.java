@@ -41,7 +41,7 @@ public class Es6InlineTypesTest extends CompilerTestCase {
 
   @Override
   public CompilerPass getProcessor(Compiler compiler) {
-    return new ConvertToTypedEs6(compiler);
+    return new Con4vertToTypedES6(compiler);
   }
 
   @Override
