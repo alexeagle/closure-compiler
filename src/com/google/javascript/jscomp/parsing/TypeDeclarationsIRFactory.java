@@ -35,13 +35,14 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 /**
- * Produces ASTs which represent JavaScript type declarations, both those created from
- * closure-style type declarations in a JSDoc node (via a conversion from the rhino AST
- * produced in {@link com.google.javascript.jscomp.parsing.NewIRFactory}) as well as
- * those created from TypeScript-style inline type declarations.
+ * Produces ASTs which represent JavaScript type declarations, both those
+ * created from closure-style type declarations in a JSDoc node (via a
+ * conversion from the rhino AST produced in
+ * {@link IRFactory}) as well as those created from TypeScript-style inline type
+ * declarations.
  *
- * This is an alternative to the AST found in the root property of JSTypeExpression, which
- * is a crufty AST that reuses language tokens.
+ * This is an alternative to the AST found in the root property of
+ * JSTypeExpression, which is a crufty AST that reuses language tokens.
  *
  * @author alexeagle@google.com (Alex Eagle)
  */
@@ -109,8 +110,8 @@ public class TypeDeclarationsIRFactory {
   }
 
   /**
-   * Produces a tree structure similar to the Rhino AST of a qualified name expression, under
-   * a top-level NAMED_TYPE node.
+   * Produces a tree structure similar to the Rhino AST of a qualified name
+   * expression, under a top-level NAMED_TYPE node.
    *
    * <p>Example:
    * <pre>
@@ -131,7 +132,8 @@ public class TypeDeclarationsIRFactory {
 
   /**
    * Represents a structural type.
-   * Closure calls this a Record Type and accepts the syntax {@code {myNum: number, myObject}}
+   * Closure calls this a Record Type and accepts the syntax
+   * {@code {myNum: number, myObject}}
    *
    * <p>Example:
    * <pre>
@@ -146,12 +148,12 @@ public class TypeDeclarationsIRFactory {
   public static TypeDeclarationNode recordType(
       LinkedHashMap<String, TypeDeclarationNode> properties) {
     TypeDeclarationNode node = new TypeDeclarationNode(Token.RECORD_TYPE);
-    for (Map.Entry<String, TypeDeclarationNode> property : properties.entrySet()) {
-      if (property.getValue() == null) {
-        node.addChildToBack(IR.stringKey(property.getKey()));
+    for (Map.Entry<String, TypeDeclarationNode> prop : properties.entrySet()) {
+      if (prop.getValue() == null) {
+        node.addChildToBack(IR.stringKey(prop.getKey()));
       } else {
-        Node stringKey = IR.stringKey(property.getKey());
-        stringKey.addChildToFront(property.getValue());
+        Node stringKey = IR.stringKey(prop.getKey());
+        stringKey.addChildToFront(prop.getValue());
         node.addChildToBack(stringKey);
       }
     }
@@ -197,7 +199,8 @@ public class TypeDeclarationsIRFactory {
 
   /**
    * Represents a parameterized, or generic, type.
-   * Closure calls this a Type Application and accepts syntax like {@code {Object.<string, number>}}
+   * Closure calls this a Type Application and accepts syntax like
+   * {@code {Object.<string, number>}}
    *
    * <p>Example:
    * <pre>
@@ -248,7 +251,8 @@ public class TypeDeclarationsIRFactory {
    * @return a new node representing the union type
    */
   public static TypeDeclarationNode unionType(Iterable<TypeDeclarationNode> options) {
-    Preconditions.checkArgument(!Iterables.isEmpty(options), "union must have at least one option");
+    Preconditions.checkArgument(!Iterables.isEmpty(options),
+        "union must have at least one option");
     TypeDeclarationNode node = new TypeDeclarationNode(Token.UNION_TYPE);
     for (Node option : options) {
       node.addChildToBack(option);
@@ -276,7 +280,8 @@ public class TypeDeclarationsIRFactory {
    *       NUMBER_TYPE
    * </pre>
    * @param type the type each of the parameters should have.
-   *             (NB: TypeScript instead gives the array type that is seen inside the function)
+   *             (NB: TypeScript instead gives the array type that is
+   *             seen inside the function)
    * @return a new node representing the function parameter type
    */
   public static TypeDeclarationNode restParams(Node type) {
@@ -290,7 +295,8 @@ public class TypeDeclarationsIRFactory {
   /**
    * Represents a function parameter that is optional.
    * In closure syntax, this is {@code function(?string=, number=)}
-   * In TypeScript syntax, it is {@code (firstName: string, lastName?: string)=>string}
+   * In TypeScript syntax, it is
+   * {@code (firstName: string, lastName?: string)=>string}
    * @param parameterType the type of the parameter
    * @return a new node representing the function parameter type
    */
@@ -384,13 +390,14 @@ public class TypeDeclarationsIRFactory {
           if (child2.isParamList()) {
             int paramIdx = 1;
             for (Node param : child2.children()) {
+              String paramName = "p" + paramIdx++;
               if (param.getType() == Token.ELLIPSIS) {
-                restName = "p" + paramIdx++;
+                restName = paramName;
                 if (param.getFirstChild() != null) {
                   restType = convertTypeNodeAST(param.getFirstChild());
                 }
               } else {
-                parameters.put("p" + paramIdx++, convertTypeNodeAST(param));
+                parameters.put(paramName, convertTypeNodeAST(param));
               }
             }
           } else if (child2.isNew()) {
