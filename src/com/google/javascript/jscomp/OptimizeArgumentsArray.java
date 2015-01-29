@@ -43,7 +43,6 @@ import java.util.List;
  * of the AST found after the {@link Normalize} pass.
  *
  */
-@NotEs6Compatible(issue = "https://github.com/google/closure-compiler/issues/798")
 class OptimizeArgumentsArray implements CompilerPass, ScopedCallback {
 
   // The arguments object as described by ECMAScript version 3

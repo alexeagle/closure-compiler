@@ -57,7 +57,6 @@ import java.util.Set;
  * be merge together safely.
  *
  */
-@NotEs6Compatible(issue = "https://github.com/google/closure-compiler/issues/803")
 class CoalesceVariableNames extends AbstractPostOrderCallback implements
     CompilerPass, ScopedCallback {
 

@@ -55,7 +55,6 @@ import java.util.Set;
  * this pass does not operate on the global scope due to compilation time.
  *
  */
-@NotEs6Compatible(issue = "https://github.com/google/closure-compiler/issues/801")
 class FlowSensitiveInlineVariables extends AbstractPostOrderCallback
     implements CompilerPass, ScopedCallback {
 

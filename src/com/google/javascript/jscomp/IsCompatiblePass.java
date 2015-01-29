@@ -38,12 +38,11 @@ public class IsCompatiblePass implements Function<PassFactory, PassFactory> {
         @Override
         CompilerPass create(AbstractCompiler compiler) {
           CompilerPass compilerPass = passFactory.create(compiler);
-          Optional<NotEs6Compatible> notEs6Compatible =
-              findAnnotation(compilerPass.getClass(), NotEs6Compatible.class);
-          if (notEs6Compatible.isPresent()) {
+          Optional<Es6Compatible> es6Compatible =
+              findAnnotation(compilerPass.getClass(), Es6Compatible.class);
+          if (!es6Compatible.isPresent()) {
             logger.warning("Skipping pass " + passFactory.getName()
-                + " because it is annotated with @NotEs6Compatible. See issue "
-                + notEs6Compatible.get().issue());
+                + " because it is not annotated with @Es6Compatible.");
             return new CompilerPass() {
               @Override
               public void process(Node externs, Node root) {

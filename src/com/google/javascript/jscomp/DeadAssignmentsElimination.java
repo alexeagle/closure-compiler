@@ -37,7 +37,6 @@ import com.google.javascript.rhino.Token;
  * current content of {@code x} will not be read and this assignment is useless.
  *
  */
-@NotEs6Compatible(issue = "https://github.com/google/closure-compiler/issues/802")
 class DeadAssignmentsElimination extends AbstractPostOrderCallback implements
     CompilerPass, ScopedCallback {
 
