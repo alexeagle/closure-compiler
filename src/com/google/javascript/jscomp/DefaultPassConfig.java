@@ -1153,7 +1153,7 @@ public class DefaultPassConfig extends PassConfig {
   final PassFactory es6TypeDeclarations = new PassFactory("Es6TypeDeclarations", true) {
     @Override
     CompilerPass create(AbstractCompiler compiler) {
-      return new Con4vertToTypedES6(compiler);
+      return new ConvertToTypedES6(compiler);
     }
   };
 
