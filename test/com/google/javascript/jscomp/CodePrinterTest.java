@@ -989,6 +989,50 @@ public class CodePrinterTest extends TestCase {
     assertPrettyPrint("(a=1)=>123;", "(a = 1) => 123;\n");
   }
 
+  // For https://github.com/google/closure-compiler/issues/782
+  public void testPrettyPrinter_spaceBeforeSingleQuote() throws Exception {
+    assertPrettyPrint("var f = function() { return 'hello'; };",
+        "var f = function() {\n" +
+            "  return 'hello';\n" +
+            "};\n",
+        new CompilerOptionBuilder() {
+          @Override
+          void setOptions(CompilerOptions options) {
+            options.setPreferSingleQuotes(true);
+          }
+        });
+  }
+
+  // For https://github.com/google/closure-compiler/issues/782
+  public void testPrettyPrinter_spaceBeforeUnaryOperators() throws Exception {
+    languageMode = LanguageMode.ECMASCRIPT6;
+
+    assertPrettyPrint("var f = function() { return !b; };",
+        "var f = function() {\n" +
+            "  return !b;\n" +
+            "};\n");
+    assertPrettyPrint("var f = function*(){yield -b}",
+        "var f = function*() {\n" +
+            "  yield -b;\n" +
+            "};\n");
+    assertPrettyPrint("var f = function() { return +b; };",
+        "var f = function() {\n" +
+            "  return +b;\n" +
+            "};\n");
+    assertPrettyPrint("var f = function() { throw ~b; };",
+        "var f = function() {\n" +
+            "  throw ~b;\n" +
+            "};\n");
+    assertPrettyPrint("var f = function() { return ++b; };",
+        "var f = function() {\n" +
+            "  return ++b;\n" +
+            "};\n");
+    assertPrettyPrint("var f = function() { return --b; };",
+        "var f = function() {\n" +
+            "  return --b;\n" +
+            "};\n");
+  }
+
   public void testTypeAnnotations() {
     assertTypeAnnotations(
         "/** @constructor */ function Foo(){}",
@@ -1192,9 +1236,7 @@ public class CodePrinterTest extends TestCase {
 
   private void assertPrettyPrint(String js, String expected) {
     assertPrettyPrint(js, expected, new CompilerOptionBuilder() {
-      @Override
-      void setOptions(CompilerOptions options) {
-      }
+      @Override void setOptions(CompilerOptions options) { }
     });
   }
 

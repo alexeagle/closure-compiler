@@ -26,10 +26,8 @@ import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.opt
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.parameterizedType;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.recordType;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.stringType;
-import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.undefinedType;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.unionType;
 import static com.google.javascript.jscomp.testing.NodeSubject.assertNode;
-import static com.google.javascript.rhino.Node.TypeDeclarationNode;
 import static com.google.javascript.rhino.Token.ANY_TYPE;
 import static com.google.javascript.rhino.Token.BOOLEAN_TYPE;
 import static com.google.javascript.rhino.Token.FUNCTION_TYPE;
@@ -46,6 +44,7 @@ import static java.util.Arrays.asList;
 import com.google.javascript.jscomp.testing.NodeSubject;
 import com.google.javascript.rhino.IR;
 import com.google.javascript.rhino.Node;
+import com.google.javascript.rhino.Node.TypeDeclarationNode;
 
 import junit.framework.TestCase;
 

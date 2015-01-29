@@ -28,6 +28,7 @@ import com.google.javascript.jscomp.parsing.parser.LiteralToken;
 import com.google.javascript.jscomp.parsing.parser.TokenType;
 import com.google.javascript.jscomp.parsing.parser.trees.ArrayLiteralExpressionTree;
 import com.google.javascript.jscomp.parsing.parser.trees.ArrayPatternTree;
+import com.google.javascript.jscomp.parsing.parser.trees.ArrayTypeTree;
 import com.google.javascript.jscomp.parsing.parser.trees.AssignmentRestElementTree;
 import com.google.javascript.jscomp.parsing.parser.trees.BinaryOperatorTree;
 import com.google.javascript.jscomp.parsing.parser.trees.BlockTree;
@@ -76,6 +77,7 @@ import com.google.javascript.jscomp.parsing.parser.trees.NewExpressionTree;
 import com.google.javascript.jscomp.parsing.parser.trees.NullTree;
 import com.google.javascript.jscomp.parsing.parser.trees.ObjectLiteralExpressionTree;
 import com.google.javascript.jscomp.parsing.parser.trees.ObjectPatternTree;
+import com.google.javascript.jscomp.parsing.parser.trees.ParameterizedTypeTree;
 import com.google.javascript.jscomp.parsing.parser.trees.ParenExpressionTree;
 import com.google.javascript.jscomp.parsing.parser.trees.ParseTree;
 import com.google.javascript.jscomp.parsing.parser.trees.ParseTreeType;
@@ -94,6 +96,7 @@ import com.google.javascript.jscomp.parsing.parser.trees.TemplateSubstitutionTre
 import com.google.javascript.jscomp.parsing.parser.trees.ThisExpressionTree;
 import com.google.javascript.jscomp.parsing.parser.trees.ThrowStatementTree;
 import com.google.javascript.jscomp.parsing.parser.trees.TryStatementTree;
+import com.google.javascript.jscomp.parsing.parser.trees.TypeNameTree;
 import com.google.javascript.jscomp.parsing.parser.trees.TypedParameterTree;
 import com.google.javascript.jscomp.parsing.parser.trees.UnaryExpressionTree;
 import com.google.javascript.jscomp.parsing.parser.trees.VariableDeclarationListTree;
@@ -535,14 +538,12 @@ class NewIRFactory {
     if (info != null && info.hasType()) {
       boolean valid = false;
       switch (n.getType()) {
-        // Casts are valid
+        // Casts, variable declarations, and exports are valid.
         case Token.CAST:
-          valid = true;
-          break;
-        // Variable declarations are valid
         case Token.VAR:
         case Token.LET:
         case Token.CONST:
+        case Token.EXPORT:
           valid = true;
           break;
         // Function declarations are valid
@@ -2177,6 +2178,42 @@ class NewIRFactory {
     }
 
     @Override
+    Node processTypeName(TypeNameTree tree) {
+      Node typeNode;
+      if (tree.segments.size() == 1) {
+        String typeName = tree.segments.get(0);
+        switch (typeName) {
+          case "any":
+            typeNode = TypeDeclarationsIRFactory.anyType();
+            break;
+          case "number":
+            typeNode = TypeDeclarationsIRFactory.numberType();
+            break;
+          case "boolean":
+            typeNode = TypeDeclarationsIRFactory.booleanType();
+            break;
+          case "string":
+            typeNode = TypeDeclarationsIRFactory.stringType();
+            break;
+          case "void":
+            typeNode = TypeDeclarationsIRFactory.voidType();
+            break;
+          case "undefined":
+            typeNode = TypeDeclarationsIRFactory.undefinedType();
+            break;
+          default:
+            typeNode = TypeDeclarationsIRFactory.namedType(tree.segments);
+            break;
+        }
+      } else {
+        typeNode = TypeDeclarationsIRFactory.namedType(tree.segments);
+      }
+      typeNode.setCharno(charno(tree));
+      typeNode.setLineno(lineno(tree));
+      return typeNode;
+    }
+
+    @Override
     Node processTypedParameter(TypedParameterTree typeAnnotation) {
       maybeWarnTypeSyntax(typeAnnotation);
       Node param = process(typeAnnotation.param);
@@ -2195,25 +2232,22 @@ class NewIRFactory {
 
     private Node convertTypeTree(ParseTree typeTree) {
       maybeWarnTypeSyntax(typeTree);
+      return process(typeTree);
+    }
 
-      // TODO(martinprobst): More types.
-      IdentifierExpressionTree typeName = typeTree.asIdentifierExpression();
-      switch (typeName.identifierToken.value) {
-        case "any":
-          return TypeDeclarationsIRFactory.anyType();
-        case "number":
-          return TypeDeclarationsIRFactory.numberType();
-        case "boolean":
-          return TypeDeclarationsIRFactory.booleanType();
-        case "string":
-          return TypeDeclarationsIRFactory.stringType();
-        case "void":
-          return TypeDeclarationsIRFactory.voidType();
-        case "undefined":
-          return TypeDeclarationsIRFactory.undefinedType();
-        default:
-          return TypeDeclarationsIRFactory.namedType(typeName.identifierToken.value);
+    @Override
+    Node processParameterizedType(ParameterizedTypeTree tree) {
+      ImmutableList.Builder<TypeDeclarationNode> arguments = ImmutableList.builder();
+      for (ParseTree arg : tree.typeArguments) {
+        arguments.add((TypeDeclarationNode) process(arg));
       }
+      TypeDeclarationNode typeName = (TypeDeclarationNode) process(tree.typeName);
+      return TypeDeclarationsIRFactory.parameterizedType(typeName, arguments.build());
+    }
+
+    @Override
+    Node processArrayType(ArrayTypeTree tree) {
+      return TypeDeclarationsIRFactory.arrayType(process(tree.elementType));
     }
 
     private Node transformList(
