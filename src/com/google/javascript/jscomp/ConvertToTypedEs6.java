@@ -29,11 +29,12 @@ import com.google.javascript.rhino.Token;
  * to a property on a node which represents a typed language element.
  * TODO(alexeagle): handle inline-style JSDoc annotations as well.
  */
-public class Es6TypeDeclarations extends AbstractPostOrderCallback implements HotSwapCompilerPass {
+public class ConvertToTypedEs6 extends AbstractPostOrderCallback
+    implements HotSwapCompilerPass {
 
   private final AbstractCompiler compiler;
 
-  public Es6TypeDeclarations(AbstractCompiler compiler) {
+  public ConvertToTypedEs6(AbstractCompiler compiler) {
     this.compiler = compiler;
   }
 
