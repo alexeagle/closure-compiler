@@ -26,7 +26,7 @@ import com.google.javascript.rhino.Node;
 
 import junit.framework.TestCase;
 
-public class Es6TypeDeclarationsTest extends TestCase {
+public class ConvertToTypedES6Test extends TestCase {
 
   private Compiler compiler;
 
@@ -59,7 +59,7 @@ public class Es6TypeDeclarationsTest extends TestCase {
     compiler.init(ImmutableList.<SourceFile>of(), ImmutableList.of(input), options);
     compiler.parseInputs();
 
-    CompilerPass pass = new Es6TypeDeclarations(compiler);
+    CompilerPass pass = new ConvertToTypedES6(compiler);
     pass.process(
         compiler.getRoot().getFirstChild(),
         compiler.getRoot().getLastChild());

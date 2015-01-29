@@ -16,42 +16,34 @@
 
 package com.google.javascript.jscomp;
 
-import static com.google.common.truth.Truth.THROW_ASSERTION_ERROR;
-import static java.util.Arrays.asList;
-
-import com.google.common.base.Joiner;
-import com.google.common.truth.FailureStrategy;
-import com.google.common.truth.Subject;
-import com.google.common.truth.Truth;
 import com.google.javascript.jscomp.CompilerOptions.LanguageMode;
-import com.google.javascript.rhino.Node;
 
-import java.util.Arrays;
-
+/**
+ * Tests the conversion of closure-style type declarations in JSDoc
+ * to inline type declarations, by running both syntaxes through the parser
+ * and verifying the resulting AST is the same.
+ *
+ * @author alexeagle@google.com (Alex Eagle)
+ */
 public class Es6InlineTypesTest extends CompilerTestCase {
-
-  private Compiler compiler;
 
   @Override
   public void setUp() {
     setAcceptedLanguage(LanguageMode.ECMASCRIPT6);
     enableAstValidation(true);
     compareJsDoc = false;
-    runTypeCheckAfterProcessing = true;
-    compiler = createCompiler();
   }
 
   @Override
   protected CompilerOptions getOptions() {
     CompilerOptions options = super.getOptions();
     options.setLanguageOut(LanguageMode.ECMASCRIPT6_TYPED);
-    options.setPreferSingleQuotes(true);
     return options;
   }
 
   @Override
   public CompilerPass getProcessor(Compiler compiler) {
-    return new Es6TypeDeclarations(compiler);
+    return new ConvertToTypedES6(compiler);
   }
 
   @Override
@@ -77,12 +69,14 @@ public class Es6InlineTypesTest extends CompilerTestCase {
   }
 
   public void testFunctionInsideAssignment() throws Exception {
-    test("/** @param {boolean} b @return {boolean} */ var f = function(b){return !b};",
+    test("/** @param {boolean} b @return {boolean} */ "
+            + "var f = function(b){return !b};",
         "var f = function(b: boolean): boolean { return !b; };");
   }
 
   public void testNestedFunctions() throws Exception {
-    test("/**@param {boolean} b*/ var f = function(b){var t = function(l) {}; t();};",
+    test("/**@param {boolean} b*/ "
+            + "var f = function(b){var t = function(l) {}; t();};",
             "var f = function(b: boolean) {" +
             "  var t = function(l) {" +
             "  };" +
@@ -96,72 +90,5 @@ public class Es6InlineTypesTest extends CompilerTestCase {
 
   public void testUndefinedType() throws Exception {
     test("/** @type {undefined} */ var n;", "var n: undefined;");
-  }
-
-  public void testNullType() throws Exception {
-    assertSource("/** @type {null} */ var n;")
-        .transpilesTo("var n: null;");
-  }
-
-  public void testUntypedVarargs() throws Exception {
-    assertSource("/** @param {function(this:T, ...)} fn */ function f(fn) {}")
-        .transpilesTo("function f(fn: (...p1) => any) {\n}\n;");
-  }
-
-  public void testFunctionType() throws Exception {
-    assertSource("/** @type {function(string,number):boolean} */ var n;")
-        .transpilesTo("var n: (p1: string, p2: number) => boolean;");
-  }
-
-  public void testTypeUnion() throws Exception {
-    assertSource("/** @type {(number|boolean)} */ var n;")
-        .transpilesTo("var n: number | boolean;");
-  }
-
-  public void testArrayType() throws Exception {
-    assertSource("/** @type {Array.<string>} */ var s;")
-        .transpilesTo("var s: string[];");
-    assertSource("/** @type {!Array.<!$jscomp.typecheck.Checker>} */ var s;")
-        .transpilesTo("var s: $jscomp.typecheck.Checker[];");
-  }
-
-  public void testRecordType() throws Exception {
-    assertSource("/** @type {{myNum: number, myObject}} */ var s;")
-        .transpilesTo("var s: {myNum: number; myObject};");
-  }
-
-  public void testParameterizedType() throws Exception {
-    assertSource("/** @type {MyCollection.<string>} */ var s;")
-        .transpilesTo("var s: MyCollection<string>;");
-    assertSource("/** @type {Object.<string, number>}  */ var s;")
-        .transpilesTo("var s: Object<string, number>;");
-
-  }
-
-  private SourceTranslationSubject assertSource(String... s) {
-    return new SourceTranslationSubject(THROW_ASSERTION_ERROR, s);
-  }
-
-  private class SourceTranslationSubject
-      extends Subject<SourceTranslationSubject, String[]> {
-
-    public SourceTranslationSubject(FailureStrategy failureStrategy, String[] s) {
-      super(failureStrategy, s);
-    }
-
-    private String doCompile(String... lines) {
-      compiler.init(externsInputs,
-          asList(SourceFile.fromCode("expected", Joiner.on("\n").join(lines))), getOptions());
-      Node root = compiler.parseInputs();
-      assertEquals("Parsing error: " + Arrays.toString(compiler.getErrors()),
-          0, compiler.getErrorCount());
-      getProcessor(compiler).process(root.getFirstChild(), root.getLastChild());
-      return compiler.toSource();
-    }
-
-    public void transpilesTo(String... lines) {
-      Truth.assertThat(doCompile(getSubject()).trim())
-          .is("'use strict';" + Joiner.on("\n").join(lines));
-    }
   }
 }
