@@ -230,6 +230,10 @@ public class DefaultPassConfig extends PassConfig {
       checks.add(markTranspilationDone);
     }
 
+    if (options.raiseToEs6Typed()) {
+      checks.add(convertToTypedES6);
+    }
+
     if (options.transpileOnly) {
       return checks;
     }
@@ -762,10 +766,6 @@ public class DefaultPassConfig extends PassConfig {
             + options.renamePrefixNamespace);
       }
       passes.add(rescopeGlobalSymbols);
-    }
-
-    if (options.getLanguageOut() == LanguageMode.ECMASCRIPT6_TYPED) {
-      passes.add(convertToTypedES6);
     }
 
     // Safety checks
