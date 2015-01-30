@@ -79,6 +79,16 @@ public class Es6InlineTypesNotYetParsedTest extends CompilerTestCase {
         .transpilesTo("function f(...v: any) {\n}\n;");
   }
 
+  public void testUnionWithUndefined() throws Exception {
+    assertSource("/** @param {Object|undefined} v */ function f(v){}")
+        .transpilesTo("function f(v: Object) {\n}\n;");
+  }
+
+  public void testUnionWithNullAndUndefined() throws Exception {
+    assertSource("/** @param {null|undefined} v */ function f(v){}")
+        .transpilesTo("function f(v) {\n}\n;");
+  }
+
   public void testFunctionType() throws Exception {
     assertSource("/** @type {function(string,number):boolean} */ var n;")
         .transpilesTo("var n: (p1: string, p2: number) => boolean;");

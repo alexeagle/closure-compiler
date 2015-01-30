@@ -1078,7 +1078,7 @@ public class CommandLineRunner extends
       options.setCodingConvention(new ClosureCodingConvention());
     }
 
-    options.setAllowEs6ToEs6(flags.allowEs6ToEs6);
+    options.setAllowEs6Out(flags.allowEs6ToEs6);
     options.setExtraAnnotationNames(flags.extraAnnotationName);
 
     CompilationLevel level = flags.compilationLevelParsed;

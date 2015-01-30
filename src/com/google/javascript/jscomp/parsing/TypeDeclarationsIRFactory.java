@@ -19,7 +19,10 @@ package com.google.javascript.jscomp.parsing;
 
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicates;
 import com.google.common.base.Splitter;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.javascript.rhino.IR;
 import com.google.javascript.rhino.JSTypeExpression;
@@ -390,7 +393,17 @@ public class TypeDeclarationsIRFactory {
       case Token.ELLIPSIS:
         return restParams(convertTypeNodeAST(n.getFirstChild()));
       case Token.PIPE:
-        return unionType(Iterables.transform(n.children(), CONVERT_TYPE_NODE));
+        ImmutableList<TypeDeclarationNode> types = FluentIterable
+            .from(n.children()).transform(CONVERT_TYPE_NODE)
+            .filter(Predicates.notNull()).toList();
+        switch (types.size()) {
+          case 0:
+            return null;
+          case 1:
+            return types.get(0);
+          default:
+            return unionType(types);
+        }
       case Token.FUNCTION:
         Node returnType = anyType();
         LinkedHashMap<String, TypeDeclarationNode> parameters = new LinkedHashMap<>();
