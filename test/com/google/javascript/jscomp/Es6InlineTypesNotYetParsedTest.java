@@ -66,7 +66,7 @@ public class Es6InlineTypesNotYetParsedTest extends CompilerTestCase {
 
   public void testNullType() throws Exception {
     assertSource("/** @type {null} */ var n;")
-        .transpilesTo("var n: null;");
+        .transpilesTo("var n;");
   }
 
   public void testUntypedVarargs() throws Exception {

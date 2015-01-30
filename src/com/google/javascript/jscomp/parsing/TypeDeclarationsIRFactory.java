@@ -70,10 +70,14 @@ public class TypeDeclarationsIRFactory {
   }
 
   /**
-   * @return a new node representing the null built-in type.
+   * We assume that types are non-nullable by default, meaning that
+   * a variable of that type should not have a null value.
+   * To indicate that a variable may have a null value, it is suggested that
+   * the variable have a nullable type.
+   * @return a new node indicating that the nested type is nullable
    */
-  public static TypeDeclarationNode nullType() {
-    return new TypeDeclarationNode(Token.NULL_TYPE);
+  public static TypeDeclarationNode nullable(TypeDeclarationNode type) {
+    return new TypeDeclarationNode(Token.NULLABLE_TYPE, type);
   }
 
   /**
@@ -338,22 +342,21 @@ public class TypeDeclarationsIRFactory {
       case Token.VOID:
         return undefinedType();
       case Token.BANG:
-        // TODO(alexeagle): capture nullability constraints once we know how to express them
+        // TODO(alexeagle): non-nullable is assumed to be the default
         return convertTypeNodeAST(n.getFirstChild());
       case Token.STRING:
         String typeName = n.getString();
         switch (typeName) {
           case "boolean":
             return booleanType();
-          case "null":
-            return nullType();
           case "number":
             return numberType();
           case "string":
             return stringType();
+          case "null":
           case "undefined":
           case "void":
-            return undefinedType();
+            return null;
           default:
             TypeDeclarationNode root = namedType(typeName);
             if (n.getChildCount() > 0 && n.getFirstChild().isBlock()) {
@@ -364,7 +367,12 @@ public class TypeDeclarationsIRFactory {
         }
       case Token.QMARK:
         Node child = n.getFirstChild();
-        return child == null ? anyType() : unionType(nullType(), convertTypeNodeAST(child));
+        return child == null
+            ? anyType()
+            // For now, our ES6_TYPED language doesn't support nullable
+            // so we drop it before building the tree.
+            // : nullable(convertTypeNodeAST(child));
+            : convertTypeNodeAST(child);
       case Token.LC:
         LinkedHashMap<String, TypeDeclarationNode> properties = new LinkedHashMap<>();
         for (Node field : n.getFirstChild().children()) {

@@ -89,6 +89,6 @@ public class Es6InlineTypesTest extends CompilerTestCase {
   }
 
   public void testUndefinedType() throws Exception {
-    test("/** @type {undefined} */ var n;", "var n: undefined;");
+    test("/** @type {undefined} */ var n;", "var n;");
   }
 }

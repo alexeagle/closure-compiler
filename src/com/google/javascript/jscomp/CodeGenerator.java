@@ -1060,15 +1060,8 @@ class CodeGenerator {
       case Token.ANY_TYPE:
         add("any");
         break;
-      case Token.NULL_TYPE:
-        add("null");
-        break;
       case Token.VOID_TYPE:
         add("void");
-        break;
-      case Token.UNDEFINED_TYPE:
-        // TODO(alexeagle): undefined isn't a legal type expression in TS
-        add("undefined");
         break;
       case Token.NAMED_TYPE:
         // Children are a chain of getprop nodes.

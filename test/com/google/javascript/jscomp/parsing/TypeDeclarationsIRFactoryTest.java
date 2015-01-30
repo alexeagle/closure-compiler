@@ -20,7 +20,6 @@ import static com.google.common.truth.Truth.THROW_ASSERTION_ERROR;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.anyType;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.booleanType;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.namedType;
-import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.nullType;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.numberType;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.optionalParameter;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.parameterizedType;
@@ -33,20 +32,17 @@ import static com.google.javascript.rhino.Token.ANY_TYPE;
 import static com.google.javascript.rhino.Token.BOOLEAN_TYPE;
 import static com.google.javascript.rhino.Token.FUNCTION_TYPE;
 import static com.google.javascript.rhino.Token.NAMED_TYPE;
-import static com.google.javascript.rhino.Token.NULL_TYPE;
 import static com.google.javascript.rhino.Token.NUMBER_TYPE;
 import static com.google.javascript.rhino.Token.PARAMETERIZED_TYPE;
 import static com.google.javascript.rhino.Token.RECORD_TYPE;
 import static com.google.javascript.rhino.Token.REST_PARAMETER_TYPE;
 import static com.google.javascript.rhino.Token.STRING_TYPE;
-import static com.google.javascript.rhino.Token.UNDEFINED_TYPE;
 import static java.util.Arrays.asList;
 
 import com.google.common.collect.Sets;
 import com.google.javascript.jscomp.parsing.Config.LanguageMode;
 import com.google.javascript.jscomp.testing.NodeSubject;
 import com.google.javascript.rhino.IR;
-import com.google.javascript.rhino.JSDocInfo;
 import com.google.javascript.rhino.JSTypeExpression;
 import com.google.javascript.rhino.Node;
 import com.google.javascript.rhino.Node.TypeDeclarationNode;
@@ -67,11 +63,8 @@ public class TypeDeclarationsIRFactoryTest extends TestCase {
     assertParseTypeAndConvert("?").hasType(ANY_TYPE);
     assertParseTypeAndConvert("*").hasType(ANY_TYPE);
     assertParseTypeAndConvert("boolean").hasType(BOOLEAN_TYPE);
-    assertParseTypeAndConvert("null").hasType(NULL_TYPE);
     assertParseTypeAndConvert("number").hasType(NUMBER_TYPE);
     assertParseTypeAndConvert("string").hasType(STRING_TYPE);
-    assertParseTypeAndConvert("void").hasType(UNDEFINED_TYPE);
-    assertParseTypeAndConvert("undefined").hasType(UNDEFINED_TYPE);
   }
 
   public void testConvertNamedTypes() throws Exception {
@@ -135,7 +128,7 @@ public class TypeDeclarationsIRFactoryTest extends TestCase {
 
   public void testConvertNullableType() throws Exception {
     assertParseTypeAndConvert("?number")
-        .isEqualTo(unionType(nullType(), numberType()));
+        .isEqualTo(numberType());
   }
 
   // TODO(alexeagle): change this test once we can capture nullability constraints in TypeScript
@@ -184,7 +177,7 @@ public class TypeDeclarationsIRFactoryTest extends TestCase {
 
   public void testConvertOptionalFunctionParameters() throws Exception {
     LinkedHashMap<String, TypeDeclarationNode> parameters = new LinkedHashMap<>();
-    parameters.put("p1", optionalParameter(unionType(nullType(), stringType())));
+    parameters.put("p1", optionalParameter(stringType()));
     parameters.put("p2", optionalParameter(numberType()));
     assertParseTypeAndConvert("function(?string=, number=)")
         .isEqualTo(TypeDeclarationsIRFactory

@@ -1430,7 +1430,7 @@ public final class NodeUtil {
       case Token.BOOLEAN_TYPE:
       case Token.ANY_TYPE:
       case Token.RECORD_TYPE:
-      case Token.NULL_TYPE:
+      case Token.NULLABLE_TYPE:
       case Token.NAMED_TYPE:
       case Token.UNDEFINED_TYPE:
       case Token.FUNCTION_TYPE:
