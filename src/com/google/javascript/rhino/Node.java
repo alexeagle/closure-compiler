@@ -1643,8 +1643,8 @@ public class Node implements Cloneable, Serializable {
     TypeDeclarationNode thisTDN = this.getDeclaredTypeExpression();
     TypeDeclarationNode thatTDN = node.getDeclaredTypeExpression();
     if ((thisTDN != null || thatTDN != null) &&
-        (thisTDN == null || thatTDN == null ||
-            !thisTDN.isEquivalentTo(thatTDN, compareType, recurse, jsDoc))) {
+        (thisTDN == null || thatTDN == null
+            || !thisTDN.isEquivalentTo(thatTDN, compareType, recurse, jsDoc))) {
       return false;
     }
 

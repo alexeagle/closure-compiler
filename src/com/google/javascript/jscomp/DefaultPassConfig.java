@@ -227,9 +227,6 @@ public class DefaultPassConfig extends PassConfig {
       checks.add(convertEs6ToEs3);
       checks.add(rewriteLetConst);
       checks.add(rewriteGenerators);
-      if (options.getLanguageOut() == LanguageMode.ECMASCRIPT6_TYPED) {
-        checks.add(convertToTypedES6);
-      }
       checks.add(markTranspilationDone);
     }
 

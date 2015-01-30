@@ -77,11 +77,11 @@ public class Es6InlineTypesTest extends CompilerTestCase {
   public void testNestedFunctions() throws Exception {
     test("/**@param {boolean} b*/ "
             + "var f = function(b){var t = function(l) {}; t();};",
-            "var f = function(b: boolean) {" +
-            "  var t = function(l) {" +
-            "  };" +
-            "  t();" +
-            "};");
+            "var f = function(b: boolean) {"
+            + "  var t = function(l) {"
+            + "  };"
+            + "  t();"
+            + "};");
   }
 
   public void testUnknownType() throws Exception {
