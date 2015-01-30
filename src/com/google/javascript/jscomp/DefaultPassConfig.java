@@ -228,7 +228,7 @@ public class DefaultPassConfig extends PassConfig {
       checks.add(rewriteLetConst);
       checks.add(rewriteGenerators);
       if (options.getLanguageOut() == LanguageMode.ECMASCRIPT6_TYPED) {
-        checks.add(es6TypeDeclarations);
+        checks.add(convertToTypedES6);
       }
       checks.add(markTranspilationDone);
     }
@@ -767,6 +767,10 @@ public class DefaultPassConfig extends PassConfig {
       passes.add(rescopeGlobalSymbols);
     }
 
+    if (options.getLanguageOut() == LanguageMode.ECMASCRIPT6_TYPED) {
+      passes.add(convertToTypedES6);
+    }
+
     // Safety checks
     passes.add(sanityCheckAst);
     passes.add(sanityCheckVars);
@@ -1149,7 +1153,7 @@ public class DefaultPassConfig extends PassConfig {
     }
   };
 
-  final PassFactory es6TypeDeclarations = new PassFactory("Es6TypeDeclarations", true) {
+  final PassFactory convertToTypedES6 = new PassFactory("ConvertToTypedES6", true) {
     @Override
     CompilerPass create(AbstractCompiler compiler) {
       return new ConvertToTypedES6(compiler);

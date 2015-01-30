@@ -22,14 +22,13 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.javascript.jscomp.CompilerOptions.LanguageMode;
 import com.google.javascript.rhino.Node;
+import com.google.javascript.rhino.Node.TypeDeclarationNode;
 import com.google.javascript.rhino.Token;
 import com.google.javascript.rhino.TokenStream;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -232,8 +231,24 @@ class CodeGenerator {
         break;
 
       case Token.NAME:
-        addIdentifier(n.getString());
-        maybeAddTypeDecl(n);
+        // TODO(alexeagle): this is pretty ugly, is there a better way?
+        // I've searched for one for a while - hard to satisfy this case
+        // and the RECORD_TYPE -> REST -> STRING_KEY case at the same time.
+        TypeDeclarationNode declaredTypeExpression = n
+            .getDeclaredTypeExpression();
+        if (declaredTypeExpression != null
+            && declaredTypeExpression.getType()
+            == Token.REST_PARAMETER_TYPE) {
+          add("...");
+          addIdentifier(n.getString());
+          add(":");
+          cc.maybeInsertSpace();
+          add(declaredTypeExpression.getFirstChild());
+        } else {
+          addIdentifier(n.getString());
+          maybeAddTypeDecl(n);
+        }
+
         if (first != null && !first.isEmpty()) {
           Preconditions.checkState(childCount == 1);
           cc.addOp("=", true);

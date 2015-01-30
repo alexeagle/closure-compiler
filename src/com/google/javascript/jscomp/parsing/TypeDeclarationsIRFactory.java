@@ -379,6 +379,8 @@ public class TypeDeclarationsIRFactory {
           properties.put(fieldName, fieldType);
         }
         return recordType(properties);
+      case Token.ELLIPSIS:
+        return restParams(convertTypeNodeAST(n.getFirstChild()));
       case Token.PIPE:
         return unionType(Iterables.transform(n.children(), CONVERT_TYPE_NODE));
       case Token.FUNCTION:

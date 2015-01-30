@@ -74,6 +74,11 @@ public class Es6InlineTypesNotYetParsedTest extends CompilerTestCase {
         .transpilesTo("function f(fn: (...p1) => any) {\n}\n;");
   }
 
+  public void testAnyTypeVarargsParam() throws Exception {
+    assertSource("/** @param {...*} v */ function f(v){}")
+        .transpilesTo("function f(...v: any) {\n}\n;");
+  }
+
   public void testFunctionType() throws Exception {
     assertSource("/** @type {function(string,number):boolean} */ var n;")
         .transpilesTo("var n: (p1: string, p2: number) => boolean;");

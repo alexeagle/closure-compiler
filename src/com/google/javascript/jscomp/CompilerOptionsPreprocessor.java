@@ -45,7 +45,7 @@ final class CompilerOptionsPreprocessor {
 
     if (options.getLanguageIn() == options.getLanguageOut()) {
       // No conversion.
-    } else if (!options.getLanguageIn().isEs6OrHigher()) {
+    } else if (!options.getLanguageIn().isEs6OrHigher() && !options.getAllowEs6ToEs6()) {
       throw new InvalidOptionsException(
           "Can only convert code from ES6 to a lower ECMAScript version."
           + " Cannot convert from %s to %s.",

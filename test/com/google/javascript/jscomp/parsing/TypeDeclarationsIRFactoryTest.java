@@ -25,6 +25,7 @@ import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.num
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.optionalParameter;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.parameterizedType;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.recordType;
+import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.restParams;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.stringType;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.unionType;
 import static com.google.javascript.jscomp.testing.NodeSubject.assertNode;
@@ -41,8 +42,12 @@ import static com.google.javascript.rhino.Token.STRING_TYPE;
 import static com.google.javascript.rhino.Token.UNDEFINED_TYPE;
 import static java.util.Arrays.asList;
 
+import com.google.common.collect.Sets;
+import com.google.javascript.jscomp.parsing.Config.LanguageMode;
 import com.google.javascript.jscomp.testing.NodeSubject;
 import com.google.javascript.rhino.IR;
+import com.google.javascript.rhino.JSDocInfo;
+import com.google.javascript.rhino.JSTypeExpression;
 import com.google.javascript.rhino.Node;
 import com.google.javascript.rhino.Node.TypeDeclarationNode;
 
@@ -176,14 +181,53 @@ public class TypeDeclarationsIRFactoryTest extends TestCase {
     parameters.put("p1", optionalParameter(unionType(nullType(), stringType())));
     parameters.put("p2", optionalParameter(numberType()));
     assertParseTypeAndConvert("function(?string=, number=)")
-        .isEqualTo(TypeDeclarationsIRFactory.functionType(anyType(), parameters, null, null));
+        .isEqualTo(TypeDeclarationsIRFactory
+            .functionType(anyType(), parameters, null, null));
+  }
+
+  public void testConvertVarArgs() throws Exception {
+    assertParseJsDocAndConvert("@param {...*} p", "p")
+        .isEqualTo(restParams(anyType()));
+  }
+
+  // the JsDocInfoParser.parseTypeString helper doesn't understand input "...*"
+  // so we need a whole separate fixture just for this.
+  // This is basically inlining that helper and changing the entry point into
+  // the parser.
+  // TODO(alexeagle): perhaps we should fix the parseTypeString helper since
+  // this seems like a bug, but it's not easy.
+  private NodeSubject assertParseJsDocAndConvert(String jsDoc,
+      String parameter) {
+    // We need to tack a closing comment token on the end so the parser doesn't
+    // think it reached premature EOL
+    jsDoc = jsDoc + " */";
+    Config config = new Config(
+        Sets.<String>newHashSet(),
+        Sets.<String>newHashSet(),
+        false,
+        LanguageMode.ECMASCRIPT3,
+        false);
+    JsDocInfoParser parser = new JsDocInfoParser(
+        new JsDocTokenStream(jsDoc),
+        jsDoc,
+        0,
+        null,
+        null,
+        config,
+        NullErrorReporter.forOldRhino());
+    assertTrue(parser.parse());
+    JSTypeExpression parameterType = parser.retrieveAndResetParsedJSDocInfo()
+        .getParameterType(parameter);
+    assertNotNull(parameterType);
+    Node oldAST = parameterType.getRoot();
+    assertNotNull(jsDoc + " did not produce a parsed AST", oldAST);
+    return new NodeSubject(THROW_ASSERTION_ERROR,
+        TypeDeclarationsIRFactory.convertTypeNodeAST(oldAST));
   }
 
   private NodeSubject assertParseTypeAndConvert(final String typeExpr) {
     Node oldAST = JsDocInfoParser.parseTypeString(typeExpr);
-    if (oldAST == null) {
-      fail(typeExpr + " did not produce a parsed AST");
-    }
+    assertNotNull(typeExpr + " did not produce a parsed AST", oldAST);
     return new NodeSubject(THROW_ASSERTION_ERROR,
         TypeDeclarationsIRFactory.convertTypeNodeAST(oldAST));
   }
