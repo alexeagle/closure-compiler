@@ -76,7 +76,7 @@ public class Es6InlineTypesNotYetParsedTest extends CompilerTestCase {
 
   public void testAnyTypeVarargsParam() throws Exception {
     assertSource("/** @param {...*} v */ function f(v){}")
-        .transpilesTo("function f(...v: any) {\n}\n;");
+        .transpilesTo("function f(...v: any[]) {\n}\n;");
   }
 
   public void testUnionWithUndefined() throws Exception {

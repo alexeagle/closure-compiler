@@ -18,6 +18,7 @@ package com.google.javascript.jscomp.parsing;
 
 import static com.google.common.truth.Truth.THROW_ASSERTION_ERROR;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.anyType;
+import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.arrayType;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.booleanType;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.namedType;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.numberType;
@@ -169,7 +170,7 @@ public class TypeDeclarationsIRFactoryTest extends TestCase {
     Node stringKey1 = IR.stringKey("p1");
     stringKey1.addChildToFront(stringType());
     Node stringKey2 = IR.stringKey("p2");
-    stringKey2.addChildToFront(numberType());
+    stringKey2.addChildToFront(arrayType(numberType()));
     assertParseTypeAndConvert("function(string, ...number): number")
         .isEqualTo(new TypeDeclarationNode(FUNCTION_TYPE, numberType(),
             stringKey1, new TypeDeclarationNode(REST_PARAMETER_TYPE, stringKey2)));
@@ -186,7 +187,7 @@ public class TypeDeclarationsIRFactoryTest extends TestCase {
 
   public void testConvertVarArgs() throws Exception {
     assertParseJsDocAndConvert("@param {...*} p", "p")
-        .isEqualTo(restParams(anyType()));
+        .isEqualTo(restParams(arrayType(anyType())));
   }
 
   // the JsDocInfoParser.parseTypeString helper doesn't understand input "...*"

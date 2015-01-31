@@ -197,7 +197,7 @@ public class TypeDeclarationsIRFactory {
     if (restName != null) {
       Node rest = IR.stringKey(restName);
       if (restType != null) {
-        rest.addChildToBack(restType);
+        rest.addChildToBack(arrayType(restType));
       }
       node.addChildToBack(restParams(rest));
     }
@@ -286,9 +286,7 @@ public class TypeDeclarationsIRFactory {
    *     STRING_KEY p2
    *       NUMBER_TYPE
    * </pre>
-   * @param type the type each of the parameters should have.
-   *             (NB: TypeScript instead gives the array type that is
-   *             seen inside the function)
+   * @param type an array type that is seen inside the function body
    * @return a new node representing the function parameter type
    */
   public static TypeDeclarationNode restParams(Node type) {
@@ -391,7 +389,7 @@ public class TypeDeclarationsIRFactory {
         }
         return recordType(properties);
       case Token.ELLIPSIS:
-        return restParams(convertTypeNodeAST(n.getFirstChild()));
+        return restParams(arrayType(convertTypeNodeAST(n.getFirstChild())));
       case Token.PIPE:
         ImmutableList<TypeDeclarationNode> types = FluentIterable
             .from(n.children()).transform(CONVERT_TYPE_NODE)
