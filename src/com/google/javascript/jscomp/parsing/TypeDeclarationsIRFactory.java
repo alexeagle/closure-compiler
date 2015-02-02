@@ -331,9 +331,13 @@ public class TypeDeclarationsIRFactory {
    * though we use the same Java class to represent them.
    * This function converts root nodes of JSTypeExpressions into TypeDeclaration ASTs,
    * to make them more similar to ordinary AST nodes.
+   *
+   * @return the root node of a TypeDeclaration AST, or null if no type is
+   *         available for the node.
    */
   // TODO(dimvar): Eventually, we want to just parse types to the new
   // representation directly, and delete this function.
+  @Nullable
   public static TypeDeclarationNode convertTypeNodeAST(Node n) {
     int token = n.getType();
     switch (token) {

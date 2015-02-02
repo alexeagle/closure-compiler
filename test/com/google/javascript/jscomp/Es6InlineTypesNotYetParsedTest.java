@@ -17,6 +17,7 @@
 package com.google.javascript.jscomp;
 
 import static com.google.common.truth.Truth.THROW_ASSERTION_ERROR;
+import static com.google.common.truth.Truth.assertThat;
 import static java.util.Arrays.asList;
 
 import com.google.common.base.Joiner;
@@ -65,59 +66,60 @@ public class Es6InlineTypesNotYetParsedTest extends CompilerTestCase {
     return 1;
   }
 
-  public void testNullType() throws Exception {
+  public void testNullType() {
     assertSource("/** @type {null} */ var n;")
         .transpilesTo("var n;");
   }
 
-  public void testUntypedVarargs() throws Exception {
+  public void testUntypedVarargs() {
     assertSource("/** @param {function(this:T, ...)} fn */ function f(fn) {}")
         .transpilesTo("function f(fn: (...p1) => any) {\n}\n;");
   }
 
-  public void testAnyTypeVarargsParam() throws Exception {
+  public void testAnyTypeVarargsParam() {
     assertSource("/** @param {...*} v */ function f(v){}")
         .transpilesTo("function f(...v: any[]) {\n}\n;");
   }
 
-  public void testUnionWithUndefined() throws Exception {
+  public void testUnionWithUndefined() {
     assertSource("/** @param {Object|undefined} v */ function f(v){}")
         .transpilesTo("function f(v: Object) {\n}\n;");
   }
 
-  public void testUnionWithNullAndUndefined() throws Exception {
+  public void testUnionWithNullAndUndefined() {
     assertSource("/** @param {null|undefined} v */ function f(v){}")
         .transpilesTo("function f(v) {\n}\n;");
   }
 
-  public void testFunctionType() throws Exception {
+  public void testFunctionType() {
     assertSource("/** @type {function(string,number):boolean} */ var n;")
         .transpilesTo("var n: (p1: string, p2: number) => boolean;");
   }
 
-  public void testTypeUnion() throws Exception {
+  public void testTypeUnion() {
     assertSource("/** @type {(number|boolean)} */ var n;")
         .transpilesTo("var n: number | boolean;");
   }
 
-  public void testArrayType() throws Exception {
+  public void testArrayType() {
     assertSource("/** @type {Array.<string>} */ var s;")
         .transpilesTo("var s: string[];");
     assertSource("/** @type {!Array.<!$jscomp.typecheck.Checker>} */ var s;")
         .transpilesTo("var s: $jscomp.typecheck.Checker[];");
   }
 
-  public void testRecordType() throws Exception {
+  public void testRecordType() {
     assertSource("/** @type {{myNum: number, myObject}} */ var s;")
         .transpilesTo("var s: {myNum: number; myObject};");
   }
 
-  public void testParameterizedType() throws Exception {
+  public void testParameterizedType() {
     assertSource("/** @type {MyCollection.<string>} */ var s;")
         .transpilesTo("var s: MyCollection<string>;");
     assertSource("/** @type {Object.<string, number>}  */ var s;")
         .transpilesTo("var s: Object<string, number>;");
-
+    assertSource("/** @type {Object.<number>}  */ var s;")
+        .transpilesTo("var s: Object<number>;");
   }
 
   private SourceTranslationSubject assertSource(String... s) {
@@ -143,7 +145,7 @@ public class Es6InlineTypesNotYetParsedTest extends CompilerTestCase {
     }
 
     public void transpilesTo(String... lines) {
-      Truth.assertThat(doCompile(getSubject()).trim())
+      assertThat(doCompile(getSubject()).trim())
           .is("'use strict';" + Joiner.on("\n").join(lines));
     }
   }
