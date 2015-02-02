@@ -1150,7 +1150,8 @@ public class DefaultPassConfig extends PassConfig {
     }
   };
 
-  final PassFactory convertToTypedES6 = new PassFactory("ConvertToTypedES6", true) {
+  final PassFactory convertToTypedES6 =
+      new PassFactory("ConvertToTypedES6", true) {
     @Override
     CompilerPass create(AbstractCompiler compiler) {
       return new ConvertToTypedES6(compiler);

@@ -26,8 +26,11 @@ import com.google.javascript.rhino.Node.TypeDeclarationNode;
 import com.google.javascript.rhino.Token;
 
 /**
- * Copies type declarations from the JSDoc (possibly of a parent node)
- * to a property on a node which represents a typed language element.
+ * Converts JS with types in jsdocs to an extended JS syntax that includes types.
+ * (Still keeps the jsdocs intact.)
+ *
+ * @author alexeagle@google.com (Alex Eagle)
+ *
  * TODO(alexeagle): handle inline-style JSDoc annotations as well.
  */
 public class ConvertToTypedES6
