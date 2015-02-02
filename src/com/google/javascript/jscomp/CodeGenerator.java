@@ -231,14 +231,15 @@ class CodeGenerator {
         break;
 
       case Token.NAME:
+        // Check if the name is a rest parameters, so we can print the
+        // ellipsis token before we print the name.
         // TODO(alexeagle): this is pretty ugly, is there a better way?
         // I've searched for one for a while - hard to satisfy this case
         // and the RECORD_TYPE -> REST -> STRING_KEY case at the same time.
         TypeDeclarationNode declaredTypeExpression = n
             .getDeclaredTypeExpression();
         if (declaredTypeExpression != null
-            && declaredTypeExpression.getType()
-            == Token.REST_PARAMETER_TYPE) {
+            && declaredTypeExpression.getType() == Token.REST_PARAMETER_TYPE) {
           add("...");
           addIdentifier(n.getString());
           add(":");
@@ -1089,7 +1090,7 @@ class CodeGenerator {
         add(first);
         break;
       case Token.UNION_TYPE:
-        addList(first, " |");
+        addList(first, "|");
         break;
       case Token.RECORD_TYPE:
         add("{");
@@ -1097,16 +1098,10 @@ class CodeGenerator {
         add("}");
         break;
       case Token.PARAMETERIZED_TYPE:
-        if ("Array".equals(first.getFirstChild().getString())) {
-          add(first.getNext());
-          add("[]");
-        } else {
-          // First child is the type that's parameterized, later children are the arguments.
-          add(first);
-          add("<");
-          addList(first.getNext());
-          add(">");
-        }
+        add(first);
+        add("<");
+        addList(first.getNext());
+        add(">");
         break;
       default:
         throw new RuntimeException(
@@ -1314,9 +1309,7 @@ class CodeGenerator {
       if (isFirst) {
         addExpr(n, isArrayOrFunctionArgument ? 1 : 0, lhsContext);
       } else {
-        cc.add(separator);
-        cc.maybeInsertSpace();
-        cc.maybeLineBreak();
+        cc.addOp(separator, true);
         addExpr(n, isArrayOrFunctionArgument ? 1 : 0,
             getContextForNoInOperator(lhsContext));
       }

@@ -24,6 +24,7 @@ import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.Subject;
 import com.google.common.truth.Truth;
 import com.google.javascript.jscomp.CompilerOptions.LanguageMode;
+import com.google.javascript.jscomp.testing.TestErrorManager;
 import com.google.javascript.rhino.Node;
 
 import java.util.Arrays;
@@ -135,9 +136,8 @@ public class Es6InlineTypesNotYetParsedTest extends CompilerTestCase {
       compiler.init(externsInputs,
           asList(SourceFile.fromCode("expected", Joiner.on("\n").join(lines))),
           getOptions());
+      compiler.setErrorManager(new TestErrorManager());
       Node root = compiler.parseInputs();
-      assertEquals("Parsing error: " + Arrays.toString(compiler.getErrors()),
-          0, compiler.getErrorCount());
       getProcessor(compiler).process(root.getFirstChild(), root.getLastChild());
       return compiler.toSource();
     }

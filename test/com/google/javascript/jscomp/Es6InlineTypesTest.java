@@ -22,8 +22,6 @@ import com.google.javascript.jscomp.CompilerOptions.LanguageMode;
  * Tests the conversion of closure-style type declarations in JSDoc
  * to inline type declarations, by running both syntaxes through the parser
  * and verifying the resulting AST is the same.
- *
- * @author alexeagle@google.com (Alex Eagle)
  */
 public class Es6InlineTypesTest extends CompilerTestCase {
 
@@ -88,6 +86,8 @@ public class Es6InlineTypesTest extends CompilerTestCase {
     test("/** @type {?} */ var n;", "var n: any;");
   }
 
+  // TypeScript doesn't have a representation for the Undefined type,
+  // so our transpilation is lossy here.
   public void testUndefinedType() throws Exception {
     test("/** @type {undefined} */ var n;", "var n;");
   }

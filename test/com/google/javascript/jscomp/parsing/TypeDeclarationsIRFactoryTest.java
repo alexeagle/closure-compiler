@@ -30,6 +30,7 @@ import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.str
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.unionType;
 import static com.google.javascript.jscomp.testing.NodeSubject.assertNode;
 import static com.google.javascript.rhino.Token.ANY_TYPE;
+import static com.google.javascript.rhino.Token.ARRAY_TYPE;
 import static com.google.javascript.rhino.Token.BOOLEAN_TYPE;
 import static com.google.javascript.rhino.Token.FUNCTION_TYPE;
 import static com.google.javascript.rhino.Token.NAMED_TYPE;
@@ -81,7 +82,7 @@ public class TypeDeclarationsIRFactoryTest extends TestCase {
 
   public void testConvertTypeApplication() throws Exception {
     assertParseTypeAndConvert("Array.<string>")
-        .isEqualTo(parameterizedType(namedType("Array"), asList(stringType())));
+        .isEqualTo(arrayType(stringType()));
     assertParseTypeAndConvert("Object.<string, number>")
         .isEqualTo(parameterizedType(namedType("Object"), asList(stringType(), numberType())));
 
@@ -122,8 +123,7 @@ public class TypeDeclarationsIRFactoryTest extends TestCase {
   public void testConvertRecordTypeWithTypeApplication() throws Exception {
     Node prop1 = IR.stringKey("length");
     assertParseTypeAndConvert("Array.<{length}>")
-        .isEqualTo(new TypeDeclarationNode(PARAMETERIZED_TYPE,
-            namedType("Array"),
+        .isEqualTo(new TypeDeclarationNode(ARRAY_TYPE,
             new TypeDeclarationNode(RECORD_TYPE, prop1)));
   }
 

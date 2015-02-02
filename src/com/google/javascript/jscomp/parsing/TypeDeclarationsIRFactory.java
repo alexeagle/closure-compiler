@@ -73,10 +73,10 @@ public class TypeDeclarationsIRFactory {
   }
 
   /**
-   * We assume that types are non-nullable by default, meaning that
-   * a variable of that type should not have a null value.
-   * To indicate that a variable may have a null value, it is suggested that
-   * the variable have a nullable type.
+   * We assume that types are non-nullable by default. Wrap a type in nullable
+   * to indicate that it should be allowed to take a null value.
+   * NB: this is not currently supported in TypeScript so it is not printed
+   * in the CodeGenerator for ES6_TYPED.
    * @return a new node indicating that the nested type is nullable
    */
   public static TypeDeclarationNode nullable(TypeDeclarationNode type) {
@@ -361,8 +361,12 @@ public class TypeDeclarationsIRFactory {
           default:
             TypeDeclarationNode root = namedType(typeName);
             if (n.getChildCount() > 0 && n.getFirstChild().isBlock()) {
+              Node block = n.getFirstChild();
+              if ("Array".equals(typeName)) {
+                return arrayType(convertTypeNodeAST(block.getFirstChild()));
+              }
               return parameterizedType(root,
-                  Iterables.transform(n.getFirstChild().children(), CONVERT_TYPE_NODE));
+                  Iterables.transform(block.children(), CONVERT_TYPE_NODE));
             }
             return root;
         }
