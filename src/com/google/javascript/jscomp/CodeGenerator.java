@@ -1088,17 +1088,6 @@ class CodeGenerator {
         add("...");
         add(first);
         break;
-      case Token.PARAMETERIZED_TYPE:
-        if ("Array".equals(first.getFirstChild().getString())) {
-          add(first.getNext());
-          add("[]");
-        } else {
-          add(first);
-          add("<");
-          addList(first.getNext());
-          add(">");
-        }
-        break;
       case Token.UNION_TYPE:
         addList(first, " |");
         break;
@@ -1107,7 +1096,18 @@ class CodeGenerator {
         addList(first, false, Context.STATEMENT, ";");
         add("}");
         break;
-
+      case Token.PARAMETERIZED_TYPE:
+        if ("Array".equals(first.getFirstChild().getString())) {
+          add(first.getNext());
+          add("[]");
+        } else {
+          // First child is the type that's parameterized, later children are the arguments.
+          add(first);
+          add("<");
+          addList(first.getNext());
+          add(">");
+        }
+        break;
       default:
         throw new RuntimeException(
             "Unknown type " + Token.name(type) + "\n" + n.toStringTree());

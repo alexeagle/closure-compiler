@@ -38,12 +38,13 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 /**
- * Produces ASTs which represent JavaScript type declarations, both those created from
- * closure-style type declarations in a JSDoc node (via a conversion from the rhino AST
- * produced in {@link com.google.javascript.jscomp.parsing.IRFactory}) as well as
- * those created from TypeScript-style inline type declarations.
+ * Produces ASTs which represent JavaScript type declarations, both those
+ * created from closure-style type declarations in a JSDoc node (via a
+ * conversion from the rhino AST produced in
+ * {@link IRFactory}) as well as those created from TypeScript-style inline type
+ * declarations.
  *
- * This is an alternative to the AST found in the root property of
+ * <p>This is an alternative to the AST found in the root property of
  * JSTypeExpression, which is a crufty AST that reuses language tokens.
  *
  * @author alexeagle@google.com (Alex Eagle)
