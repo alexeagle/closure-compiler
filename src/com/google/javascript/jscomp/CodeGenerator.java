@@ -1324,7 +1324,7 @@ class CodeGenerator {
     }
     if (n.hasChildren()) {
       add(":");
-      cc.maybeInsertSpace();
+      //cc.maybeInsertSpace();
       addExpr(n.getFirstChild(), 1, Context.OTHER);
     }
   }

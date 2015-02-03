@@ -93,7 +93,7 @@ public class Es6InlineTypesNotYetParsedTest extends CompilerTestCase {
 
   public void testFunctionType() {
     assertSource("/** @type {function(string,number):boolean} */ var n;")
-        .transpilesTo("var n: (p1: string, p2: number) => boolean;");
+        .transpilesTo("var n: (p1:string, p2:number) => boolean;");
   }
 
   public void testTypeUnion() {
@@ -110,7 +110,7 @@ public class Es6InlineTypesNotYetParsedTest extends CompilerTestCase {
 
   public void testRecordType() {
     assertSource("/** @type {{myNum: number, myObject}} */ var s;")
-        .transpilesTo("var s: {myNum: number; myObject};");
+        .transpilesTo("var s: {myNum:number; myObject};");
   }
 
   public void testParameterizedType() {

@@ -374,7 +374,7 @@ public class ExternExportsPassTest extends TestCase {
          "/** @enum {string}\n @export */ var E = {A:8, B:9};" +
          "goog.exportSymbol('E', E);",
          "/** @enum {string} */\n" +
-         "var E = {A: 1, B: 2};\n");
+         "var E = {A:1, B:2};\n");
    }
 
   /** If we export a property with "prototype" as a path component, there
