@@ -25,7 +25,6 @@ import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.num
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.optionalParameter;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.parameterizedType;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.recordType;
-import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.restParams;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.stringType;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.unionType;
 import static com.google.javascript.jscomp.testing.NodeSubject.assertNode;
@@ -84,7 +83,9 @@ public class TypeDeclarationsIRFactoryTest extends TestCase {
     assertParseTypeAndConvert("Array.<string>")
         .isEqualTo(arrayType(stringType()));
     assertParseTypeAndConvert("Object.<string, number>")
-        .isEqualTo(parameterizedType(namedType("Object"), asList(stringType(), numberType())));
+        .isEqualTo(namedType("Object"));
+    assertParseTypeAndConvert("MyObject.<string, number>")
+        .isEqualTo(parameterizedType(namedType("MyObject"), asList(stringType(), numberType())));
 
     assertNode(parameterizedType(namedType("Array"), asList(stringType())))
         .isEqualTo(new TypeDeclarationNode(PARAMETERIZED_TYPE,

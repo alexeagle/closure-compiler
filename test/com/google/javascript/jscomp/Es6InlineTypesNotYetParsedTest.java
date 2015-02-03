@@ -117,9 +117,11 @@ public class Es6InlineTypesNotYetParsedTest extends CompilerTestCase {
     assertSource("/** @type {MyCollection.<string>} */ var s;")
         .transpilesTo("var s: MyCollection<string>;");
     assertSource("/** @type {Object.<string, number>}  */ var s;")
-        .transpilesTo("var s: Object<string, number>;");
+        .transpilesTo("var s: Object;");
     assertSource("/** @type {Object.<number>}  */ var s;")
-        .transpilesTo("var s: Object<number>;");
+        .transpilesTo("var s: Object;");
+    assertSource("/** @type {MyCollection.<test.mytype.<string>>} */ var s;")
+        .transpilesTo("var s: MyCollection<test.mytype<string>>;");
   }
 
   private SourceTranslationSubject assertSource(String... s) {

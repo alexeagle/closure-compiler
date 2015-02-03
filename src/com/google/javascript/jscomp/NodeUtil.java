@@ -1433,6 +1433,7 @@ public final class NodeUtil {
       case Token.UNDEFINED_TYPE:
       case Token.FUNCTION_TYPE:
       case Token.REST_PARAMETER_TYPE:
+      case Token.PARAMETERIZED_TYPE:
         return 15;
       case Token.CAST:
         return 16;
