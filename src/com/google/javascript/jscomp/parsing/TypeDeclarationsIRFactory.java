@@ -397,7 +397,7 @@ public class TypeDeclarationsIRFactory {
         }
         return recordType(properties);
       case Token.ELLIPSIS:
-        return restParams(arrayType(convertTypeNodeAST(n.getFirstChild())));
+        return arrayType(convertTypeNodeAST(n.getFirstChild()));
       case Token.PIPE:
         ImmutableList<TypeDeclarationNode> types = FluentIterable
             .from(n.children()).transform(CONVERT_TYPE_NODE)

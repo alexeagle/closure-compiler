@@ -231,24 +231,8 @@ class CodeGenerator {
         break;
 
       case Token.NAME:
-        // Check if the name is a rest parameters, so we can print the
-        // ellipsis token before we print the name.
-        // TODO(alexeagle): this is pretty ugly, is there a better way?
-        // I've searched for one for a while - hard to satisfy this case
-        // and the RECORD_TYPE -> REST -> STRING_KEY case at the same time.
-        TypeDeclarationNode declaredTypeExpression = n
-            .getDeclaredTypeExpression();
-        if (declaredTypeExpression != null
-            && declaredTypeExpression.getType() == Token.REST_PARAMETER_TYPE) {
-          add("...");
-          addIdentifier(n.getString());
-          add(":");
-          cc.maybeInsertSpace();
-          add(declaredTypeExpression.getFirstChild());
-        } else {
-          addIdentifier(n.getString());
-          maybeAddTypeDecl(n);
-        }
+        addIdentifier(n.getString());
+        maybeAddTypeDecl(n);
 
         if (first != null && !first.isEmpty()) {
           Preconditions.checkState(childCount == 1);
@@ -397,6 +381,7 @@ class CodeGenerator {
       case Token.REST:
         add("...");
         add(n.getString());
+        maybeAddTypeDecl(n);
         break;
 
       case Token.SPREAD:

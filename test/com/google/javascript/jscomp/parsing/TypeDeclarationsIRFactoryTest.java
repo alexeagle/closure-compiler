@@ -187,11 +187,11 @@ public class TypeDeclarationsIRFactoryTest extends TestCase {
 
   public void testConvertVarArgs() throws Exception {
     assertParseJsDocAndConvert("@param {...*} p", "p")
-        .isEqualTo(restParams(arrayType(anyType())));
+        .isEqualTo(arrayType(anyType()));
   }
 
-  // the JsDocInfoParser.parseTypeString helper doesn't understand input "...*"
-  // so we need a whole separate fixture just for this.
+  // the JsDocInfoParser.parseTypeString helper doesn't understand an ELLIPSIS
+  // as the root token, so we need a whole separate fixture just for that case.
   // This is basically inlining that helper and changing the entry point into
   // the parser.
   // TODO(alexeagle): perhaps we should fix the parseTypeString helper since

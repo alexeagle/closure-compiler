@@ -70,7 +70,15 @@ public class ConvertToTypedES6
           JSTypeExpression parameterType =
               parentJSDoc.getParameterType(n.getString());
           if (parameterType != null) {
-            setTypeExpression(n, parameterType);
+            Node attachTypeExpr = n;
+            // Modify the primary AST to represent a function parameter as a
+            // REST node, if the type indicates it is a rest parameter.
+            if (parameterType.getRoot().getType() == Token.ELLIPSIS) {
+              attachTypeExpr = Node.newString(Token.REST, n.getString());
+              n.getParent().replaceChild(n, attachTypeExpr);
+              compiler.reportCodeChange();
+            }
+            setTypeExpression(attachTypeExpr, parameterType);
           }
         }
         break;
