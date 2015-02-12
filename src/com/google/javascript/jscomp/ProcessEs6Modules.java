@@ -148,6 +148,7 @@ public class ProcessEs6Modules extends AbstractPostOrderCallback {
           }
         }
       } else {
+        // import * as ns from "mod"
         Preconditions.checkState(child.getType() == Token.IMPORT_STAR,
             "Expected an IMPORT_STAR node, but was: %s", child);
         importMap.put(
@@ -168,23 +169,13 @@ public class ProcessEs6Modules extends AbstractPostOrderCallback {
       }
     }
 
-    for (String name : namesToRequire) {
-      Node require = IR.exprResult(IR.call(NodeUtil.newQName(
-          compiler, "goog.require"),
-          IR.string(moduleName + "." + name)));
-      require.copyInformationFromForTree(importDecl);
-      script.addChildToFront(require);
-      if (reportDependencies) {
-        t.getInput().addRequire(moduleName + "." + name);
-      }
-    }
-
     parent.removeChild(importDecl);
     compiler.reportCodeChange();
   }
 
   private void visitExport(NodeTraversal t, Node n, Node parent) {
     if (n.getBooleanProp(Node.EXPORT_DEFAULT)) {
+      // export default var Foo;
       Node var = IR.var(IR.name(DEFAULT_EXPORT_NAME), n.removeFirstChild());
       var.useSourceInfoIfMissingFromForTree(n);
       var.setJSDocInfo(n.getJSDocInfo());
@@ -192,6 +183,7 @@ public class ProcessEs6Modules extends AbstractPostOrderCallback {
       n.getParent().replaceChild(n, var);
       exportMap.put("default", DEFAULT_EXPORT_NAME);
     } else if (n.getBooleanProp(Node.EXPORT_ALL_FROM)) {
+      //   export * from 'moduleIdentifier';
       compiler.report(JSError.make(n, Es6ToEs3Converter.CANNOT_CONVERT_YET,
           "Wildcard export"));
     } else if (n.getChildCount() == 2) {
@@ -213,6 +205,7 @@ public class ProcessEs6Modules extends AbstractPostOrderCallback {
       parent.removeChild(n);
     } else {
       if (n.getFirstChild().getType() == Token.EXPORT_SPECS) {
+        //     export {Foo};
         for (Node exportSpec : n.getFirstChild().children()) {
           Node origName = exportSpec.getFirstChild();
           exportMap.put(
@@ -223,6 +216,9 @@ public class ProcessEs6Modules extends AbstractPostOrderCallback {
         }
         parent.removeChild(n);
       } else {
+        //    export var Foo;
+        //    export function Foo() {}
+        // etc.
         Node declaration = n.getFirstChild();
         for (int i = 0; i < declaration.getChildCount(); i++) {
           Node maybeName = declaration.getChildAtIndex(i);
@@ -262,6 +258,11 @@ public class ProcessEs6Modules extends AbstractPostOrderCallback {
     Preconditions.checkArgument(scriptNodeCount == 1,
         "ProcessEs6Modules supports only one invocation per "
         + "CompilerInput / script node");
+
+    // rewriteRequires is here (rather than being part of the main visit()
+    // method, because we only want to rewrite the requires if this is an
+    // ES6 module.
+    rewriteRequires(script);
 
     String moduleName = toModuleName(loader.getLoadAddress(t.getInput()));
 
@@ -306,30 +307,52 @@ public class ProcessEs6Modules extends AbstractPostOrderCallback {
       if (reportDependencies) {
         t.getInput().addProvide(moduleName);
       }
-
-      for (String name : exportMap.keySet()) {
-        String qualifiedName = moduleName + "." + name;
-        Node newGoogProvide = IR.exprResult(
-            IR.call(NodeUtil.newQName(compiler, "goog.provide"),
-                IR.string(qualifiedName)));
-        newGoogProvide.copyInformationFromForTree(script);
-        if (name.equals("default")) {
-          JSDocInfoBuilder jsDocInfo = script.getJSDocInfo() == null
-              ? new JSDocInfoBuilder(false)
-              : JSDocInfoBuilder.copyFrom(script.getJSDocInfo());
-          jsDocInfo.recordSuppressions(ImmutableSet.of("invalidProvide"));
-          script.setJSDocInfo(jsDocInfo.build(script));
-        }
-
-        script.addChildAfter(newGoogProvide, googProvide);
-        if (reportDependencies) {
-          t.getInput().addProvide(qualifiedName);
-        }
-      }
     }
+
+    JSDocInfoBuilder jsDocInfo = script.getJSDocInfo() == null
+        ? new JSDocInfoBuilder(false)
+        : JSDocInfoBuilder.copyFrom(script.getJSDocInfo());
+    if (!jsDocInfo.isPopulatedWithFileOverview()) {
+      jsDocInfo.recordFileOverview("");
+    }
+    // Don't check provides and requires, since most of them are auto-generated.
+    jsDocInfo.recordSuppressions(ImmutableSet.of("missingProvide", "missingRequire"));
+    script.setJSDocInfo(jsDocInfo.build(script));
 
     exportMap.clear();
     compiler.reportCodeChange();
+  }
+
+  private void rewriteRequires(Node script) {
+    NodeTraversal.traverse(compiler, script, new NodeTraversal.AbstractShallowCallback() {
+      public void visit(NodeTraversal t, Node n, Node parent) {
+        if (n.isCall()
+            && n.getFirstChild().matchesQualifiedName("goog.require")
+            && parent.isName()) {
+          visitRequire(n, parent);
+        }
+      }
+
+      private void visitRequire(Node requireCall, Node parent) {
+        // Rewrite
+        //
+        //   var foo = goog.require('bar.foo');
+        //
+        // to
+        //
+        //   goog.require('bar.foo');
+        //   var foo = bar.foo;
+
+        String namespace = requireCall.getLastChild().getString();
+
+        Node replacement = NodeUtil.newQName(compiler, namespace).srcrefTree(requireCall);
+        parent.replaceChild(requireCall, replacement);
+        Node varNode = parent.getParent();
+        varNode.getParent().addChildBefore(
+            IR.exprResult(requireCall).srcrefTree(requireCall),
+            varNode);
+      }
+    });
   }
 
   /**

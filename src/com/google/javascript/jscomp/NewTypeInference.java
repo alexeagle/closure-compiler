@@ -37,6 +37,7 @@ import com.google.javascript.jscomp.newtypes.TypeEnv;
 import com.google.javascript.rhino.JSDocInfo;
 import com.google.javascript.rhino.Node;
 import com.google.javascript.rhino.Token;
+import com.google.javascript.rhino.jstype.StaticSourceFile;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -231,13 +232,24 @@ public class NewTypeInference implements CompilerPass {
       TypeValidator.INVALID_CAST,
       TypeValidator.UNKNOWN_TYPEOF_VALUE);
 
+  private static String getFileWhereWarningOccurred(JSError warning) {
+    StaticSourceFile f = warning.node.getStaticSourceFile();
+    return f == null ? "" : f.getName();
+  }
+
   public static class WarningReporter {
     AbstractCompiler compiler;
     WarningReporter(AbstractCompiler compiler) { this.compiler = compiler; }
+
     void add(JSError warning) {
-      if (!JSType.mockToString) {
-        compiler.report(warning);
+      // We check the file name to avoid some warnings in code generated
+      // by the ES6 transpilation passes.
+      // TODO(dimvar): typecheck that code properly and remove this.
+      if (getFileWhereWarningOccurred(warning).startsWith(" [synthetic")
+          || JSType.mockToString) {
+        return;
       }
+      compiler.report(warning);
     }
   }
 
@@ -286,7 +298,6 @@ public class NewTypeInference implements CompilerPass {
     process(externs, root);
     return symbolTable.getGlobalScope();
   }
-
 
   @Override
   public void process(Node externs, Node root) {
@@ -1792,7 +1803,7 @@ public class NewTypeInference implements CompilerPass {
       return new EnvTypePair(env, JSType.UNKNOWN);
     }
     JSType assertedType =
-        assertionFunctionSpec.getAssertedNewType(callNode, currentScope);
+        (JSType) assertionFunctionSpec.getAssertedType(callNode, currentScope);
     if (assertedType.isUnknown()) {
       warnings.add(
           JSError.make(callNode, NewTypeInference.UNKNOWN_ASSERTION_TYPE));
@@ -3599,24 +3610,6 @@ public class NewTypeInference implements CompilerPass {
       return envPutType(env, RETVAL_ID, JSType.BOTTOM);
     }
     return env;
-  }
-
-  @VisibleForTesting // Only used from tests
-  JSType getFormalType(int argpos) {
-    Preconditions.checkState(summaries.size() == 1);
-    return summaries.values().iterator().next()
-        .getFunType().getFormalType(argpos);
-  }
-
-  @VisibleForTesting // Only used from tests
-  JSType getReturnType() {
-    Preconditions.checkState(summaries.size() == 1);
-    return summaries.values().iterator().next().getFunType().getReturnType();
-  }
-
-  @VisibleForTesting // Only used from tests
-  JSType getDeclaredType(String varName) {
-    return currentScope.getDeclaredTypeOf(varName);
   }
 
   private static class DeferredCheck {

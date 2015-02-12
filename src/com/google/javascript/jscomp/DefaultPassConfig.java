@@ -220,6 +220,11 @@ public class DefaultPassConfig extends PassConfig {
       checks.add(checkVariableReferences);
     }
 
+    if (options.getLanguageIn() == LanguageMode.ECMASCRIPT6_TYPED
+        && options.getLanguageOut() != LanguageMode.ECMASCRIPT6_TYPED) {
+      checks.add(convertDeclaredTypesToJSDoc);
+    }
+
     if (options.lowerFromEs6()) {
       checks.add(es6RenameVariablesInParamLists);
       checks.add(es6SplitVariableDeclarations);
@@ -269,8 +274,7 @@ public class DefaultPassConfig extends PassConfig {
       checks.add(suspiciousCode);
     }
 
-    if (options.checkRequires.isOn()
-        || options.enables(DiagnosticGroups.MISSING_REQUIRE)) {
+    if (options.enables(DiagnosticGroups.MISSING_REQUIRE)) {
       checks.add(checkRequires);
     }
 
@@ -717,10 +721,6 @@ public class DefaultPassConfig extends PassConfig {
       passes.add(instrumentFunctions);
     }
 
-    if (options.aggressiveRenaming) {
-      passes.add(gatherCharBias);
-    }
-
     if (options.variableRenaming != VariableRenamingPolicy.ALL) {
       // If we're leaving some (or all) variables with their old names,
       // then we need to undo any of the markers we added for distinguishing
@@ -914,7 +914,7 @@ public class DefaultPassConfig extends PassConfig {
       new HotSwapPassFactory("checkRequires", true) {
     @Override
     protected HotSwapCompilerPass create(AbstractCompiler compiler) {
-      return new CheckRequiresForConstructors(compiler, CheckLevel.WARNING);
+      return new CheckRequiresForConstructors(compiler);
     }
   };
 
@@ -1147,6 +1147,14 @@ public class DefaultPassConfig extends PassConfig {
     @Override
     protected CompilerPass create(AbstractCompiler compiler) {
       return new Es6ToEs3ClassSideInheritance(compiler);
+    }
+  };
+
+  final PassFactory convertDeclaredTypesToJSDoc =
+      new PassFactory("convertDeclaredTypesToJSDoc", true) {
+    @Override
+    CompilerPass create(AbstractCompiler compiler) {
+      return new ConvertDeclaredTypesToJSDoc(compiler);
     }
   };
 
@@ -2394,25 +2402,10 @@ public class DefaultPassConfig extends PassConfig {
   }
 
   /** Renames labels */
-  final PassFactory gatherCharBias = new PassFactory("gatherCharBias", true) {
-    @Override
-    protected CompilerPass create(AbstractCompiler compiler) {
-      return new GatherCharacterEncodingBias(
-          compiler,
-          getNameGenerator(),
-          options.variableRenaming != VariableRenamingPolicy.LOCAL);
-    }
-  };
-
-  /** Renames labels */
   final PassFactory renameLabels = new PassFactory("renameLabels", true) {
     @Override
     protected CompilerPass create(AbstractCompiler compiler) {
-      if (options.aggressiveRenaming) {
-        return new RenameLabels(compiler, getNameGenerator());
-      } else {
-        return new RenameLabels(compiler);
-      }
+      return new RenameLabels(compiler);
     }
   };
 

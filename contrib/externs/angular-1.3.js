@@ -1415,6 +1415,11 @@ angular.$HttpProvider;
 angular.$HttpProvider.defaults;
 
 /**
+ * @type {!Array.<string|function(...*): !angular.$http.Interceptor>}
+ */
+angular.$HttpProvider.interceptors;
+
+/**
  * @param {boolean=} opt_value
  * @return {boolean|!angular.$HttpProvider}
  */
@@ -1975,6 +1980,11 @@ angular.$route;
 
 /** @type {function()} */
 angular.$route.reload = function() {};
+
+/**
+ * @param {!Object<string,string>} object
+ */
+angular.$route.updateParams = function(object) {};
 
 /** @type {!angular.$route.Route} */
 angular.$route.current;

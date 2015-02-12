@@ -23,12 +23,9 @@ import static java.util.Arrays.asList;
 import com.google.common.base.Joiner;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.Subject;
-import com.google.common.truth.Truth;
 import com.google.javascript.jscomp.CompilerOptions.LanguageMode;
 import com.google.javascript.jscomp.testing.TestErrorManager;
 import com.google.javascript.rhino.Node;
-
-import java.util.Arrays;
 
 /**
  * This test is temporary. It asserts that the CodeGenerator produces the
@@ -38,6 +35,7 @@ import java.util.Arrays;
  *
  * @author alexeagle@google.com (Alex Eagle)
  */
+
 public class Es6InlineTypesNotYetParsedTest extends CompilerTestCase {
 
   private Compiler compiler;
@@ -110,18 +108,16 @@ public class Es6InlineTypesNotYetParsedTest extends CompilerTestCase {
 
   public void testRecordType() {
     assertSource("/** @type {{myNum: number, myObject}} */ var s;")
-        .transpilesTo("var s: {myNum:number; myObject};");
+        .transpilesTo("var s: {myNum:number ; myObject};");
   }
 
   public void testParameterizedType() {
     assertSource("/** @type {MyCollection.<string>} */ var s;")
         .transpilesTo("var s: MyCollection<string>;");
     assertSource("/** @type {Object.<string, number>}  */ var s;")
-        .transpilesTo("var s: Object;");
+        .transpilesTo("var s: Object<string, number>;");
     assertSource("/** @type {Object.<number>}  */ var s;")
-        .transpilesTo("var s: Object;");
-    assertSource("/** @type {MyCollection.<test.mytype.<string>>} */ var s;")
-        .transpilesTo("var s: MyCollection<test.mytype<string>>;");
+        .transpilesTo("var s: Object<number>;");
   }
 
   private SourceTranslationSubject assertSource(String... s) {
@@ -148,7 +144,7 @@ public class Es6InlineTypesNotYetParsedTest extends CompilerTestCase {
 
     public void transpilesTo(String... lines) {
       assertThat(doCompile(getSubject()).trim())
-          .is("'use strict';" + Joiner.on("\n").join(lines));
+          .isEqualTo("'use strict';" + Joiner.on("\n").join(lines));
     }
   }
 }

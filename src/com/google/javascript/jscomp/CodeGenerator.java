@@ -22,7 +22,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.javascript.jscomp.CompilerOptions.LanguageMode;
 import com.google.javascript.rhino.Node;
-import com.google.javascript.rhino.Node.TypeDeclarationNode;
 import com.google.javascript.rhino.Token;
 import com.google.javascript.rhino.TokenStream;
 
@@ -1083,6 +1082,7 @@ class CodeGenerator {
         add("}");
         break;
       case Token.PARAMETERIZED_TYPE:
+        // First child is the type that's parameterized, later children are the arguments.
         add(first);
         add("<");
         addList(first.getNext());
@@ -1324,7 +1324,6 @@ class CodeGenerator {
     }
     if (n.hasChildren()) {
       add(":");
-      //cc.maybeInsertSpace();
       addExpr(n.getFirstChild(), 1, Context.OTHER);
     }
   }

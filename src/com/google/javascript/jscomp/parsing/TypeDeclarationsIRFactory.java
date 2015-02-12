@@ -368,13 +368,6 @@ public class TypeDeclarationsIRFactory {
               Node block = n.getFirstChild();
               if ("Array".equals(typeName)) {
                 return arrayType(convertTypeNodeAST(block.getFirstChild()));
-              } else if ("Object".equals(typeName)) {
-                // Closure allows the Object type to specify the type of keys
-                // and values, or just the type of values. However, it is not
-                // really a parameterized type.
-                // We can't express this in TypeScript, the compiler gives
-                // error TS2315: Type 'Object' is not generic.
-                return root;
               }
               return parameterizedType(root,
                   Iterables.transform(block.children(), CONVERT_TYPE_NODE));
