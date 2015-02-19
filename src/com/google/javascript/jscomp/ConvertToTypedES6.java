@@ -73,7 +73,7 @@ public class ConvertToTypedES6
             visitConstructor(n, parent, anonymousCopy);
           }
         }
-        if (parent.isAssign() && isPrototypePropertyDeclaration(parent.getParent())) {
+        if (isPrototypePropertyDeclaration(parent.getParent())) {
           visitClassMember(parent, anonymousCopy,
               getPrototypeClassName(parent.getFirstChild()).getQualifiedName(),
               getPrototypePropertyName(parent.getFirstChild()));
