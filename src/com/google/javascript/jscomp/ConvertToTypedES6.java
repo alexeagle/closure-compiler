@@ -16,10 +16,12 @@
 
 package com.google.javascript.jscomp;
 
+import static com.google.javascript.jscomp.NodeUtil.getPrototypeClassName;
+import static com.google.javascript.jscomp.NodeUtil.getPrototypePropertyName;
+import static com.google.javascript.jscomp.NodeUtil.isPrototypePropertyDeclaration;
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.convert;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Splitter;
 import com.google.javascript.jscomp.NodeTraversal.AbstractPostOrderCallback;
 import com.google.javascript.rhino.IR;
 import com.google.javascript.rhino.JSDocInfo;
@@ -29,8 +31,6 @@ import com.google.javascript.rhino.Node.TypeDeclarationNode;
 import com.google.javascript.rhino.Token;
 
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -61,24 +61,22 @@ public class ConvertToTypedES6
     JSDocInfo bestJSDocInfo = NodeUtil.getBestJSDocInfo(n);
     switch (n.getType()) {
       case Token.FUNCTION:
-        Node functionAnonCopy = IR.function(
+        Node anonymousCopy = IR.function(
             IR.name(""),
             n.getChildAtIndex(1).cloneTree(),
             n.getLastChild().cloneTree());
 
         if (bestJSDocInfo != null) {
           setTypeExpression(n, bestJSDocInfo.getReturnType());
-          setTypeExpression(functionAnonCopy, bestJSDocInfo.getReturnType());
+          setTypeExpression(anonymousCopy, bestJSDocInfo.getReturnType());
           if (bestJSDocInfo.isConstructor() || bestJSDocInfo.isInterface()) {
-            visitConstructor(n, parent, functionAnonCopy);
+            visitConstructor(n, parent, anonymousCopy);
           }
         }
-        if (parent.isAssign() && parent.getParent().isExprResult()) {
-          String assignedTo = parent.getFirstChild().getQualifiedName();
-          if (assignedTo.contains(".prototype.")) {
-            List<String> assignParts = Splitter.on(".prototype.").splitToList(assignedTo);
-            visitClassMember(parent, functionAnonCopy, assignParts.get(0), assignParts.get(1));
-          }
+        if (parent.isAssign() && isPrototypePropertyDeclaration(parent.getParent())) {
+          visitClassMember(parent, anonymousCopy,
+              getPrototypeClassName(parent.getFirstChild()).getQualifiedName(),
+              getPrototypePropertyName(parent.getFirstChild()));
         }
         break;
       case Token.NAME:
@@ -115,20 +113,20 @@ public class ConvertToTypedES6
     }
   }
 
-  private void visitConstructor(Node n, Node parent, Node constructorFunc) {
+  private void visitConstructor(Node originalFunc, Node parent, Node anonymousCopy) {
     Node toReplace;
     Node name;
     if (parent.isName() && parent.getParent().isVar()) {
       toReplace = parent.getParent();
       name = parent;
     } else {
-      toReplace = n;
-      name = n.getFirstChild();
+      toReplace = originalFunc;
+      name = originalFunc.getFirstChild();
     }
     Node members = new Node(Token.CLASS_MEMBERS);
-    boolean hasConstructorStatements = n.getLastChild().hasChildren();
-    if (hasConstructorStatements){
-      members.addChildToBack(IR.memberFunctionDef("constructor", constructorFunc));
+    boolean hasConstructorStatements = originalFunc.getLastChild().hasChildren();
+    if (hasConstructorStatements) {
+      members.addChildToBack(IR.memberFunctionDef("constructor", anonymousCopy));
     }
     Node asClass = new Node(Token.CLASS, name.cloneNode(), IR.empty(), members);
     classMemberRoots.put(name.getQualifiedName(), members);
