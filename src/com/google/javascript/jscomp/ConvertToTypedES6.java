@@ -18,12 +18,20 @@ package com.google.javascript.jscomp;
 
 import static com.google.javascript.jscomp.parsing.TypeDeclarationsIRFactory.convert;
 
+import com.google.common.base.Preconditions;
+import com.google.common.base.Splitter;
 import com.google.javascript.jscomp.NodeTraversal.AbstractPostOrderCallback;
+import com.google.javascript.rhino.IR;
 import com.google.javascript.rhino.JSDocInfo;
 import com.google.javascript.rhino.JSTypeExpression;
 import com.google.javascript.rhino.Node;
 import com.google.javascript.rhino.Node.TypeDeclarationNode;
 import com.google.javascript.rhino.Token;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Converts JS with types in jsdocs to an extended JS syntax that includes types.
@@ -37,6 +45,7 @@ public class ConvertToTypedES6
     extends AbstractPostOrderCallback implements CompilerPass {
 
   private final AbstractCompiler compiler;
+  private final Map<String, Node> classMemberRoots = new HashMap<>();
 
   public ConvertToTypedES6(AbstractCompiler compiler) {
     this.compiler = compiler;
@@ -52,8 +61,24 @@ public class ConvertToTypedES6
     JSDocInfo bestJSDocInfo = NodeUtil.getBestJSDocInfo(n);
     switch (n.getType()) {
       case Token.FUNCTION:
+        Node functionAnonCopy = IR.function(
+            IR.name(""),
+            n.getChildAtIndex(1).cloneTree(),
+            n.getLastChild().cloneTree());
+
         if (bestJSDocInfo != null) {
           setTypeExpression(n, bestJSDocInfo.getReturnType());
+          setTypeExpression(functionAnonCopy, bestJSDocInfo.getReturnType());
+          if (bestJSDocInfo.isConstructor() || bestJSDocInfo.isInterface()) {
+            visitConstructor(n, parent, functionAnonCopy);
+          }
+        }
+        if (parent.isAssign() && parent.getParent().isExprResult()) {
+          String assignedTo = parent.getFirstChild().getQualifiedName();
+          if (assignedTo.contains(".prototype.")) {
+            List<String> assignParts = Splitter.on(".prototype.").splitToList(assignedTo);
+            visitClassMember(parent, functionAnonCopy, assignParts.get(0), assignParts.get(1));
+          }
         }
         break;
       case Token.NAME:
@@ -88,6 +113,38 @@ public class ConvertToTypedES6
       default:
         break;
     }
+  }
+
+  private void visitConstructor(Node n, Node parent, Node constructorFunc) {
+    Node toReplace;
+    Node name;
+    if (parent.isName() && parent.getParent().isVar()) {
+      toReplace = parent.getParent();
+      name = parent;
+    } else {
+      toReplace = n;
+      name = n.getFirstChild();
+    }
+    Node members = new Node(Token.CLASS_MEMBERS);
+    boolean hasConstructorStatements = n.getLastChild().hasChildren();
+    if (hasConstructorStatements){
+      members.addChildToBack(IR.memberFunctionDef("constructor", constructorFunc));
+    }
+    Node asClass = new Node(Token.CLASS, name.cloneNode(), IR.empty(), members);
+    classMemberRoots.put(name.getQualifiedName(), members);
+
+    asClass.useSourceInfoIfMissingFromForTree(toReplace);
+    toReplace.getParent().replaceChild(toReplace, asClass);
+    compiler.reportCodeChange();
+  }
+
+  private void visitClassMember(Node parent, Node memberFunc, String owningClass, String memberName) {
+    Node members = classMemberRoots.get(owningClass);
+    Preconditions.checkNotNull(members, "Didn't previously create class " + owningClass);
+    members.addChildToBack(IR.memberFunctionDef(memberName, memberFunc));
+    members.useSourceInfoIfMissingFromForTree(parent.getParent());
+    parent.getParent().getParent().removeChild(parent.getParent());
+    compiler.reportCodeChange();
   }
 
   private void setTypeExpression(Node n, JSTypeExpression type) {
