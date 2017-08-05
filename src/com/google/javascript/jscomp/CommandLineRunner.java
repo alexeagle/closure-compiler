@@ -743,6 +743,13 @@ public class CommandLineRunner extends
     )
     private ModuleLoader.ResolutionMode moduleResolutionMode = ModuleLoader.ResolutionMode.LEGACY;
 
+    @Option(name = "--package_json_entry_names",
+        usage = "Ordered list of entries to look for in package.json files when processing "
+        + "modules with the NODE module resolution strategy (i.e. esnext:main,browser,main). "
+        + "Defaults to a list with a single entry, \"main\"."
+    )
+    private String packageJsonEntryNames = null;
+
     @Argument
     private List<String> arguments = new ArrayList<>();
     private final CmdLineParser parser;
@@ -819,7 +826,8 @@ public class CommandLineRunner extends
                     "js_module_root",
                     "module_resolution",
                     "process_common_js_modules",
-                    "transform_amd_modules"))
+                    "transform_amd_modules",
+                    "package_json_entry_names"))
             .putAll(
                 "Library and Framework Specific",
                 ImmutableList.of(
@@ -1049,6 +1057,10 @@ public class CommandLineRunner extends
       }
 
       return result.build();
+    }
+
+    List<String> getPackageJsonEntryNames() throws CmdLineException {
+      return Splitter.on(',').splitToList(packageJsonEntryNames);
     }
 
     // Our own option parser to be backwards-compatible.
@@ -1722,6 +1734,15 @@ public class CommandLineRunner extends
     options.setEmitUseStrict(flags.emitUseStrict);
     options.setSourceMapIncludeSourcesContent(flags.sourceMapIncludeSourcesContent);
     options.setModuleResolutionMode(flags.moduleResolutionMode);
+
+    if (flags.packageJsonEntryNames != null) {
+      try {
+        List<String> packageJsonEntryNames = flags.getPackageJsonEntryNames();
+        options.setPackageJsonEntryNames(packageJsonEntryNames);
+      } catch (CmdLineException e) {
+        reportError("ERROR - invalid package_json_entry_names format specified.");
+      }
+    }
 
     return options;
   }
